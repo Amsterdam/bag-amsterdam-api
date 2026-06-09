@@ -1,6 +1,6 @@
 # BAG Amsterdam API
 
-This is a proxy service to connect to the RvIG BAG API. It filters requests and     enforces token-based authorization.
+This is a proxy service to connect to the RvIG BAG API. It filters requests and enforces token-based authorization.
 
 # Reason
 
@@ -24,7 +24,7 @@ Run docker compose:
 docker compose up
 ```
 
-Navigate to `localhost:8097`.
+Navigate to `localhost:8098`.
 
 
 ## Using Local Python
