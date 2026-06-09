@@ -104,9 +104,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 CACHES = {"default": env.cache_url(default="locmemcache://")}
 
-DATABASES = (
-    {}
-)  # "default": env.db_url(default="django.db.backends.sqlite3:///tmp/db.sqlite3")}
+DATABASES = {}  # "default": env.db_url(default="django.db.backends.sqlite3:///tmp/db.sqlite3")}
 
 locals().update(env.email_url(default="smtp://"))
 
@@ -219,14 +217,10 @@ if CLOUD_ENV.startswith("azure"):
 
     # Microsoft recommended abbreviation for Application Insights is `APPI`
     AZURE_APPI_CONNECTION_STRING = env.str("AZURE_APPI_CONNECTION_STRING")
-    AZURE_APPI_AUDIT_CONNECTION_STRING = env.str(
-        "AZURE_APPI_AUDIT_CONNECTION_STRING", None
-    )
+    AZURE_APPI_AUDIT_CONNECTION_STRING = env.str("AZURE_APPI_AUDIT_CONNECTION_STRING", None)
     # AZURE_DATA_COLLECTION_ENDPOINT = env.str("AZURE_DATA_COLLECTION_ENDPOINT", None)
     AZURE_DATA_COLLECTION_RULE_ID = env.str("AZURE_DATA_COLLECTION_RULE_ID", None)
-    AZURE_DATA_COLLECTION_STREAM_NAME = env.str(
-        "AZURE_DATA_COLLECTION_STREAM_NAME", None
-    )
+    AZURE_DATA_COLLECTION_STREAM_NAME = env.str("AZURE_DATA_COLLECTION_STREAM_NAME", None)
 
     # Set the Managed Idenity Client ID
     MANAGED_IDENTITY_CLIENT_ID = env.str("MANAGED_IDENTITY_CLIENT_ID", None)
@@ -246,9 +240,7 @@ if CLOUD_ENV.startswith("azure"):
                 "urllib": {"enabled": True},
                 "urllib3": {"enabled": True},
             },
-            resource=Resource.create(
-                {ResourceAttributes.SERVICE_NAME: "bag-amsterdam-api"}
-            ),
+            resource=Resource.create({ResourceAttributes.SERVICE_NAME: "bag-amsterdam-api"}),
         )
         print("OpenTelemetry has been enabled")
 
@@ -256,11 +248,7 @@ if CLOUD_ENV.startswith("azure"):
             if (
                 span.is_recording()
                 and hasattr(request, "get_token_claims")
-                and (
-                    email := request.get_token_claims.get(
-                        "email", request.get_token_subject
-                    )
-                )
+                and (email := request.get_token_claims.get("email", request.get_token_subject))
             ):
                 span.set_attribute("user.AuthenticatedId", email)
 
@@ -279,9 +267,7 @@ if CLOUD_ENV.startswith("azure"):
         audit_logger_provider = LoggerProvider()
         audit_logger_provider.add_log_record_processor(
             BatchLogRecordProcessor(
-                AzureMonitorLogExporter(
-                    connection_string=AZURE_APPI_AUDIT_CONNECTION_STRING
-                )
+                AzureMonitorLogExporter(connection_string=AZURE_APPI_AUDIT_CONNECTION_STRING)
             )
         )
 
@@ -301,11 +287,12 @@ if CLOUD_ENV.startswith("azure"):
                 ]
         print("Audit logging has been enabled")
 
+    # moet dit hier ook zo?
     # if AZURE_DATA_COLLECTION_ENDPOINT is not None:
     #     # Configure audit logging to use our custom synchronous logger
     #     LOGGING["handlers"]["audit_console"] = {
     #         "level": "DEBUG",
-    #         "class": "bag_amsterdam_api.bevragingen.loghandler.BAGAuditLogHandler",  # moet dit hier ook zo?
+    #         "class": "bag_amsterdam_api.bevragingen.loghandler.BAGAuditLogHandler",
     #         "formatter": "audit_json",
     #     }
     #     for logger_name, logger_details in LOGGING["loggers"].items():
@@ -391,9 +378,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 if DEBUG:
-    REST_FRAMEWORK[
-        "DEFAULT_RENDERER_CLASSES"
-    ].append(  # ty:ignore[possibly-missing-attribute]
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(  # ty:ignore[possibly-missing-attribute]
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
@@ -401,9 +386,7 @@ DATAPUNT_AUTHZ = {
     # To verify JWT tokens, either the PUB_JWKS or a OAUTH_JWKS_URL needs to be set.
     "JWKS": os.getenv("PUB_JWKS"),
     "JWKS_URL": os.getenv("OAUTH_JWKS_URL"),
-    "JWKS_URLS": env.list(
-        "OAUTH_JWKS_URLS", default=[]
-    ),  # To support both keyclock and Entra ID
+    "JWKS_URLS": env.list("OAUTH_JWKS_URLS", default=[]),  # To support both keyclock and Entra ID
     "CHECK_CLAIMS": env.dict("OAUTH_CHECK_CLAIMS", default={}),
     # "ALWAYS_OK": True if DEBUG else False,
     "ALWAYS_OK": False,
