@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
+from typing import Any
 
 import environ
-from corsheaders.defaults import default_headers
 from pythonjsonlogger import json
 
 env = environ.Env()
-_USE_SECRET_STORE = Path("/mnt/secrets-store").exists()
 
 # -- Environment
 
@@ -25,13 +24,6 @@ STATIC_URL = env.str("STATIC_URL", "/static/")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str("SECRET_KEY", "insecure")
 
-SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", not DEBUG)
-CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", not DEBUG)
-
-INTERNAL_IPS = ("127.0.0.1",)
-
-TIME_ZONE = "Europe/Amsterdam"
-
 # -- Application definition
 
 INSTALLED_APPS = [
@@ -39,7 +31,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "bag_amsterdam_api",
-    # "bag_amsterdam_api.bevragingen",  # moet dit ook zo voor bag?
 ]
 
 MIDDLEWARE = [
@@ -60,8 +51,6 @@ if DEBUG:
     ]
     MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 ROOT_URLCONF = "bag_amsterdam_api.urls"
 
 STORAGES = {
@@ -72,8 +61,7 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
-TEMPLATES = [
+TEMPLATES: list[dict[str, Any]] = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [str(SRC_DIR / "templates")],
@@ -90,23 +78,9 @@ TEMPLATES = [
     },
 ]
 
-if not DEBUG:
-    # Keep templates in memory
-    TEMPLATES[0]["OPTIONS"]["loaders"] = [
-        ("django.template.loaders.cached.Loader", TEMPLATES[0]["OPTIONS"]["loaders"]),
-    ]
-
-WSGI_APPLICATION = "bag_amsterdam_api.wsgi.application"
-
 # -- Services
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
-
-CACHES = {"default": env.cache_url(default="locmemcache://")}
-
 DATABASES = {}  # "default": env.db_url(default="django.db.backends.sqlite3:///tmp/db.sqlite3")}
-
-locals().update(env.email_url(default="smtp://"))
 
 # -- Logging
 
@@ -186,11 +160,6 @@ LOGGING = {
             "level": LOG_LEVEL,
             "propagate": False,
         },
-        "bag_amsterdam_api.audit": {
-            "handlers": ["audit_console"],
-            "level": AUDIT_LOG_LEVEL,
-            "propagate": False,
-        },
         "authorization_django": {
             "handlers": ["audit_console"],
             "level": AUDIT_LOG_LEVEL,
@@ -218,12 +187,6 @@ if CLOUD_ENV.startswith("azure"):
     # Microsoft recommended abbreviation for Application Insights is `APPI`
     AZURE_APPI_CONNECTION_STRING = env.str("AZURE_APPI_CONNECTION_STRING")
     AZURE_APPI_AUDIT_CONNECTION_STRING = env.str("AZURE_APPI_AUDIT_CONNECTION_STRING", None)
-    # AZURE_DATA_COLLECTION_ENDPOINT = env.str("AZURE_DATA_COLLECTION_ENDPOINT", None)
-    AZURE_DATA_COLLECTION_RULE_ID = env.str("AZURE_DATA_COLLECTION_RULE_ID", None)
-    AZURE_DATA_COLLECTION_STREAM_NAME = env.str("AZURE_DATA_COLLECTION_STREAM_NAME", None)
-
-    # Set the Managed Idenity Client ID
-    MANAGED_IDENTITY_CLIENT_ID = env.str("MANAGED_IDENTITY_CLIENT_ID", None)
 
     # Configure OpenTelemetry to use Azure Monitor with the specified connection string
     if AZURE_APPI_CONNECTION_STRING is not None:
@@ -287,62 +250,10 @@ if CLOUD_ENV.startswith("azure"):
                 ]
         print("Audit logging has been enabled")
 
-    # moet dit hier ook zo?
-    # if AZURE_DATA_COLLECTION_ENDPOINT is not None:
-    #     # Configure audit logging to use our custom synchronous logger
-    #     LOGGING["handlers"]["audit_console"] = {
-    #         "level": "DEBUG",
-    #         "class": "bag_amsterdam_api.bevragingen.loghandler.BAGAuditLogHandler",
-    #         "formatter": "audit_json",
-    #     }
-    #     for logger_name, logger_details in LOGGING["loggers"].items():
-    #         if "audit_console" in logger_details["handlers"]:
-    #             LOGGING["loggers"][logger_name]["handlers"] = [
-    #                 "audit_console",
-    #                 "console",
-    #             ]
-    #     print("Audit logging has been enabled")
-
 # -- Third party app settings
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=False)
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
-CORS_ALLOWED_ORIGIN_REGEXES = env.list(
-    "CORS_ALLOWED_ORIGIN_REGEXES",
-    default=(
-        [
-            r"^http://localhost(?::\d+)?",
-            r"^http://127.0.0.1(?::\d+)?",
-        ]
-        if DEBUG
-        else []
-    ),
-)
-CORS_ALLOW_HEADERS = list(default_headers) + env.list(
-    "CORS_ALLOW_HEADERS",
-    default=[
-        "x-user",
-        "x-correlation-id",
-        "x-task-description",
-        "accept-gezag-version",
-    ],
-)
-
-# CONTENT_SECURITY_POLICY = {
-#     "DIRECTIVES": {
-#         "default-src": [NONE],
-#         "frame-ancestors": [NONE],
-#     },
-# }
-
-HEALTH_CHECKS = {
-    "app": lambda request: True,
-    # "database": "django_healthchecks.contrib.check_database",
-    # 'cache': 'django_healthchecks.contrib.check_cache_default',
-    # 'ip': 'django_healthchecks.contrib.check_remote_addr',
-}
-HEALTH_CHECKS_ERROR_CODE = 503
 
 REST_FRAMEWORK = dict(
     DEFAULT_PARSER_CLASSES=[
@@ -358,24 +269,6 @@ REST_FRAMEWORK = dict(
     URL_FORMAT_OVERRIDE="_format",  # use ?_format=.. instead of ?format=..
     DEFAULT_AUTHENTICATION_CLASSES=[],
 )
-
-
-SPECTACULAR_SETTINGS = {
-    "TITLE": "BAG Amsterdam API",
-    "DESCRIPTION": "This is a proxy service to connect to the RvIG BAG API.",
-    "CONTACT": {"email": "datapunt@amsterdam.nl"},
-    "VERSION": "1.0.0",
-    "LICENSE": {
-        "name": "European Union Public License, version 1.2 (EUPL-1.2)",
-        "url": "https://eupl.eu/1.2/nl/",
-    },
-    "AUTHENTICATION_WHITELIST": None,
-    "PREPROCESSING_HOOKS": [
-        "api.openapi.preprocessors.preprocessing_filter_spec",
-    ],
-    # Ensure paths are correct in swagger docs:
-    "SCHEMA_PATH_PREFIX_INSERT": "/catalogus" if CLOUD_ENV.startswith("azure") else "",
-}
 
 if DEBUG:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(  # ty:ignore[possibly-missing-attribute]

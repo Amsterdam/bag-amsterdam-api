@@ -3,5 +3,8 @@ from rest_framework.response import Response
 
 
 @api_view(["GET"])
-def index(request):
+def pulse(request):
+    """
+    Simple health probe.
+    """
     return Response({"status": "OK"})

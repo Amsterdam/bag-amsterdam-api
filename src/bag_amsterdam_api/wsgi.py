@@ -1,5 +1,5 @@
 """
-WSGI config for BAG Amsterdam API project.
+WSGI config for Bag Amsterdam Api project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 """
