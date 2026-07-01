@@ -13,6 +13,7 @@ COPY ./pyproject.toml ./uv.lock ./
 
 RUN uv sync --frozen --no-install-project --all-groups
 COPY /src /app/src
+COPY tests /app/tests
 
 RUN uv sync --frozen --all-groups
 
