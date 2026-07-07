@@ -1,11 +1,5 @@
-from __future__ import annotations
-
-from pathlib import Path
-
 import pytest
 from rest_framework.test import APIClient
-
-HERE = Path(__file__).parent
 
 
 @pytest.fixture()

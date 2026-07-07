@@ -1,7 +1,7 @@
 [project]
 name = "bag_amsterdam_api"
 version = "0.1"
-description = "This is a proxy service to connect to the RvIG BAG API."
+description = "This is a proxy service to connect to the RvIG BAG API. It filters requests and enforces token-based authorization."
 url = "https://github.com/Amsterdam/bag-amsterdam-api/"
 author = "Amsterdam Datapunt"
 author_email = "datapunt@amsterdam.nl"
@@ -14,22 +14,16 @@ dependencies = [
     "django==5.2.15",
     "django-cors-headers==4.9.0",
     "django-environ==0.13.0",
-    "django-healthchecks==1.5.0",
     "djangorestframework==3.17.1",
-    "drf-spectacular==0.29.0",
-    "psycopg==3.3.4",
-    "pydantic[email]==2.13.4",
-    "python-dateutil==2.9.0.post0",
     "python-json-logger==4.1.0",
-    "python-owasp-zap-v2-4==0.1.0",
     "requests==2.34.2",
     "requests-mock==1.12.1",
-    "unidecode==1.4.0",
     "uwsgi>=2.0.31",
     "uwsgi-readiness-check==0.2.0",
     "uwsgitop==0.12",
     "whitenoise==6.12.0",
 ]
+
 
 [dependency-groups]
 dev = [
@@ -58,7 +52,7 @@ module-root = "src"
 
 # ==== pytest ====
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "tests.settings"
+DJANGO_SETTINGS_MODULE = "bag_amsterdam_api.settings"
 minversion = "6.0"
 django_find_project = false
 pythonpath = "."
@@ -66,7 +60,7 @@ testpaths = ["tests"]
 addopts = [
     "--nomigrations",
     "--reuse-db",
-    "--ds=tests.settings",
+    "--ds=bag_amsterdam_api.settings",
     "--cov",
     "--cov-fail-under=97"
 ]
@@ -80,8 +74,8 @@ xfail_strict = true
 # ==== Coverage ====
 [tool.coverage.run]
 branch = true
-source = ["src/api", "src/beheeromgeving","src/domain"]
-omit = ["*/migrations/*.py", "settings.py", "*/commands/import*", "wsgi.py", "preprocessors.py"]
+source = ["src/bag_amsterdam_api"]
+omit = ["settings.py", "wsgi.py"]
 plugins = ["django_coverage_plugin"]
 
 [tool.coverage.report]
@@ -90,10 +84,7 @@ exclude_also = [
     'if "debug_toolbar" in settings.INSTALLED_APPS:',
     "raise NotImplementedError",
     "raise DomainException",
-    "raise exceptions.DomainException",
-    "case exceptions.DomainException",
-    "def __str__(self):",
-    "if not is_initialized:"
+    "case exceptions.DomainException"
 ]
 
 # ==== ruff ====
@@ -144,6 +135,8 @@ ignore = [
     "RET508", # superfluous-else-break
     "S607", # subprocess partial path
 ]
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
 
 [tool.ruff.lint.flake8-comprehensions]
 allow-dict-calls-with-keyword-arguments = true
@@ -155,14 +148,8 @@ extend-function-names = ["gettext_lazy", "ngettext_lazy", "pgettext", "pgettext_
 "django.utils.timezone.make_aware".msg = "There is no need for make_aware(), pass tzinfo directly."
 
 [tool.ruff.lint.isort]
-known-first-party = ["beheeromgeving", "tests"]
+known-first-party = ["bag_amsterdam_api", "tests"]
 #required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
-
-[tool.ruff.lint.per-file-ignores]
-"**/migrations/*.py" = ["E501"]  # line too long
-"docs/_ext/djangodummy/settings.py" = ["S105"]  # allow hardcoded SECRET_KEY
-"tests/settings.py" = ["F405"]  # allow unknown variables via import from *
-"tests/**/*.py" = ["DJ008", "S101", "S105", "S106", "S314", "S320", "S608"]  # allow asserts, hardcoded passwords, lxml parsing, SQL injection
