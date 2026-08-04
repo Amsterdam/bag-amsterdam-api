@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:0.11-python3.14-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.12-python3.14-trixie-slim AS builder
 
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
@@ -18,7 +18,7 @@ COPY tests /app/tests
 RUN uv sync --frozen --all-groups
 
 # Start runtime image,
-FROM ghcr.io/astral-sh/uv:0.11-python3.14-trixie-slim
+FROM ghcr.io/astral-sh/uv:0.12-python3.14-trixie-slim
 
 # Create user bag-amsterdam-api with the same UID as github actions runner.
 RUN groupadd --system --gid 999  bag-amsterdam-api  && useradd --system --gid 999 \
