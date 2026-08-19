@@ -1,0 +1,205 @@
+"""Client for RvIG BAG API."""
+
+import logging
+from typing import TypedDict
+from urllib.parse import urlparse
+
+import orjson
+import requests
+from django.conf import settings
+from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
+
+# from more_ds.network.url import URL
+from oauthlib.oauth2 import BackendApplicationClient
+from requests import Timeout
+from requests_oauthlib import OAuth2Session
+from rest_framework import status
+from rest_framework.exceptions import APIException, NotFound
+
+from bag_amsterdam_api.bevragingen.exceptions import (
+    BadGateway,
+    GatewayTimeout,
+    RemoteAPIException,
+    ServiceUnavailable,
+)
+
+from .base import BaseBagClient
+
+logger = logging.getLogger(__name__)
+
+USER_AGENT = "BAG-Amsterdam-API/1.0"
+
+
+class OAuthToken(TypedDict):
+    token_type: str  # bearer
+    access_token: str
+    expires_in: int
+    scope: str
+
+
+class RvIGBagClient(BaseBagClient):
+    """RvIG BAG API client.
+
+    When a reference to the client is kept globally,
+    its HTTP connection pool can be reused between threads.
+    """
+
+    def __init__(
+        self,
+        endpoint_url,
+        *,
+        oauth_endpoint_url: str | None = None,
+        oauth_client_id: str | None = None,
+        oauth_client_secret: str | None = None,
+        oauth_scope: str | None = None,
+    ):
+        """Initialize the client configuration.
+
+        :param endpoint_url: Full URL of the RvIG BAG service.
+        :param oauth_endpoint_url: Full URL to the Diginetwerk OAuth service.
+        :param oauth_client_id: Client ID for OAuth calls.
+        :param oauth_client_secret: Client secret for OAuth calls.
+        :param oauth_scope: OAuth scope to request,
+            should be Organization Identification Number (OIN),
+            found in the PKI-overheid certificate.
+        """
+        if not endpoint_url:
+            raise ValueError("Missing BAG endpoint URL")
+        self.endpoint_url = endpoint_url
+        self.oauth_endpoint_url = oauth_endpoint_url
+        self._host = urlparse(endpoint_url).netloc
+
+        if settings.BACKEND_API == "mock":
+            # Connecting to the mock endpoint
+            self._client_secret = None
+            self._session = requests.Session()
+        else:
+            if not oauth_endpoint_url:
+                raise ImproperlyConfigured("Missing BAG OAuth endpoint URL")
+            if not oauth_client_id:
+                raise ImproperlyConfigured("Missing BAG OAuth client ID")
+            if not oauth_client_secret:
+                raise ImproperlyConfigured("Missing BAG OAuth client secret")
+
+            # Connecting to official API on the private 'diginetwerk'.
+            self._client_secret = oauth_client_secret
+
+            # Get existing token from configured cache (e.g. locmemcache)
+            # to avoid needing reauthentication.
+            token = cache.get("rvig-token")
+
+            # The requests-oauthlib logic will automatically insert the token data.
+            self._session = OAuth2Session(
+                # The BackendApplicationClient gives grant_type=authorization_code
+                client=BackendApplicationClient(client_id=oauth_client_id, scope=oauth_scope),
+                token=token,
+                token_updater=self._cache_token,  # only called for refresh urls.
+            )
+
+    def fetch_token(self) -> OAuthToken:
+        """Retrieve the access token.
+        This is a server-side OAuth call, which doesn't redirect the user.
+        It but immediately returns the token.
+        """
+        # The retrieved token is also stored in self._session.token.
+        host = self.oauth_endpoint_url
+        try:
+            token = self._session.fetch_token(
+                self.oauth_endpoint_url,
+                client_secret=self._client_secret,
+                include_client_id=True,  # not using "Authorization: Basic" header but POST params
+                resourceServer="ResourceServer01",
+                headers={
+                    "Accept": "application/json; charset=utf-8",
+                    "User-Agent": USER_AGENT,
+                },
+                timeout=5,
+            )
+        except (TimeoutError, Timeout) as e:
+            # Socket timeout
+            logger.error("Proxy call to %s failed, timeout from remote server: %s", host, e)
+            raise GatewayTimeout() from e
+        except OSError as e:
+            # Socket connect / SSL error.
+            logger.error("Proxy call to %s failed, error when connecting to server: %s", host, e)
+            raise ServiceUnavailable(str(e)) from e
+        self._cache_token(token)
+        return token
+
+    def _cache_token(self, token: OAuthToken):
+        """Save the retrieved token."""
+        # make sure the cache is expired when refreshes are needed.
+        timeout = token["expires_in"] - 900
+        logger.debug("Caching OAuth access token for %d seconds", timeout)
+        cache.set("rvig-token", token, timeout=timeout)
+
+    def _prepare_request(self):
+        # Request the token if needed
+        if self._client_secret is not None and not self._session.token:
+            logger.debug("No OAuth token stored yet, retrieving new OAuth token")
+            self.fetch_token()
+
+    @property
+    def host(self) -> str:
+        return self._host
+
+    def _get_http_error(self, response: requests.Response) -> APIException:
+        # Translate the remote HTTP error to the proper response.
+        #
+        # This translates some errors into a 502 "Bad Gateway" or 503 "Gateway Timeout"
+        # error to reflect the fact that this API is calling another service as backend.
+
+        # Consider the actual JSON response here,
+        # unless the request hit the completely wrong page (it got an HTML page).
+        content_type = response.headers.get("content-type", "")
+        remote_json = (
+            orjson.loads(response.content)
+            if any(ct in content_type for ct in ["application/json", "application/problem+json"])
+            else None
+        )
+        detail_message = response.text if not content_type.startswith("text/html") else None
+
+        if not remote_json:
+            # Unexpected response, call it a "Bad Gateway"
+            logger.error(
+                "Proxy call failed, unexpected status code from endpoint: %s %s",
+                response.status_code,
+                detail_message,
+            )
+            return BadGateway(
+                detail_message or f"Unexpected HTTP {response.status_code} from internal endpoint"
+            )
+
+        if response.status_code == status.HTTP_401_UNAUTHORIZED or (
+            response.status_code == status.HTTP_403_FORBIDDEN
+            and remote_json is not None
+            and remote_json["title"] == "U bent niet geautoriseerd voor het gebruik van deze API."
+        ):
+            # Our API key is not configured (401) or incorrect (403). Don't blame the client.
+            # So far there is no other cause for a 403, but allow this to change.
+            return BadGateway(
+                "Backend is improperly configured, final endpoint rejected our credentials.",
+                code="backend_config",
+            )
+        elif response.status_code in (
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_403_FORBIDDEN,
+        ):
+            # Bad request likely means the JSON parameters were invalid.
+            # Translate proper "Bad Request" to REST response
+            return RemoteAPIException(response.status_code, remote_json)
+        elif response.status_code == status.HTTP_404_NOT_FOUND:
+            # Return 404 to client (in DRF format)
+            if content_type == "application/problem+json":
+                # Forward the problem-json details, but still in a 404:
+                return RemoteAPIException(response.status_code, remote_json)
+            return NotFound(repr(remote_json))
+        else:
+            # Unexpected response, call it a "Bad Gateway"
+            logger.error(
+                "Proxy call failed, unexpected status code from endpoint: %s %s",
+                response.status_code,
+                detail_message,
+            )
+            return BadGateway(f"Unexpected HTTP {response.status_code} from internal endpoint")

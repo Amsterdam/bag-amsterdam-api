@@ -2,9 +2,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
 
+import bag_amsterdam_api.bevragingen.urls
+
 from .views import pulse
 
 urlpatterns = [
+    path("bevragingen/", include(bag_amsterdam_api.bevragingen.urls)),
     path("pulse", pulse),
 ]
 
