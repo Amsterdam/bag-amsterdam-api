@@ -6,6 +6,9 @@ import environ
 from pythonjsonlogger import json
 
 env = environ.Env()
+_USE_SECRET_STORE = Path("/mnt/secrets-store").exists()
+
+URL = env.str("URL", default="http://localhost:8098/")
 
 # -- Environment
 
@@ -111,17 +114,12 @@ _json_log_formatter = {
 
 DJANGO_LOG_LEVEL = env.str("DJANGO_LOG_LEVEL", "INFO")
 LOG_LEVEL = env.str("LOG_LEVEL", "DEBUG" if DEBUG else "INFO")
-AUDIT_LOG_LEVEL = env.str("AUDIT_LOG_LEVEL", "INFO")
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": True,
     "formatters": {
         "json": _json_log_formatter,
-        "audit_json": {
-            **_json_log_formatter,
-            "static_fields": {"audit": True},
-        },
     },
     "handlers": {
         "console": {
@@ -132,12 +130,6 @@ LOGGING = {
         "console_print": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
-        },
-        "audit_console": {
-            # For azure, this is replaced below.
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "audit_json",
         },
     },
     "root": {
@@ -158,11 +150,6 @@ LOGGING = {
         "bag_amsterdam_api": {
             "handlers": ["console"],
             "level": LOG_LEVEL,
-            "propagate": False,
-        },
-        "authorization_django": {
-            "handlers": ["audit_console"],
-            "level": AUDIT_LOG_LEVEL,
             "propagate": False,
         },
         "apikeyclient": {"handlers": ["console"], "propagate": False},
@@ -186,7 +173,6 @@ if CLOUD_ENV.startswith("azure"):
 
     # Microsoft recommended abbreviation for Application Insights is `APPI`
     AZURE_APPI_CONNECTION_STRING = env.str("AZURE_APPI_CONNECTION_STRING")
-    AZURE_APPI_AUDIT_CONNECTION_STRING = env.str("AZURE_APPI_AUDIT_CONNECTION_STRING", None)
 
     # Configure OpenTelemetry to use Azure Monitor with the specified connection string
     if AZURE_APPI_CONNECTION_STRING is not None:
@@ -220,35 +206,6 @@ if CLOUD_ENV.startswith("azure"):
 
         # Psycopg2Instrumentor().instrument(enable_commenter=True, commenter_options={})
         # print("Psycopg instrumentor enabled")
-
-    if AZURE_APPI_AUDIT_CONNECTION_STRING is not None:
-        # Configure audit logging to an extra log
-        from azure.monitor.opentelemetry.exporter import AzureMonitorLogExporter
-        from opentelemetry.sdk._logs import LoggerProvider
-        from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-
-        audit_logger_provider = LoggerProvider()
-        audit_logger_provider.add_log_record_processor(
-            BatchLogRecordProcessor(
-                AzureMonitorLogExporter(connection_string=AZURE_APPI_AUDIT_CONNECTION_STRING)
-            )
-        )
-
-        # Attach LoggingHandler to namespaced logger
-        # same as: handler = LoggingHandler(logger_provider=audit_logger_provider)
-        LOGGING["handlers"]["audit_console"] = {
-            "level": "DEBUG",
-            "class": "opentelemetry.sdk._logs.LoggingHandler",
-            "logger_provider": audit_logger_provider,
-            "formatter": "audit_json",
-        }
-        for logger_name, logger_details in LOGGING["loggers"].items():
-            if "audit_console" in logger_details["handlers"]:
-                LOGGING["loggers"][logger_name]["handlers"] = [
-                    "audit_console",
-                    "console",
-                ]
-        print("Audit logging has been enabled")
 
 # -- Third party app settings
 
@@ -285,3 +242,41 @@ DATAPUNT_AUTHZ = {
     "ALWAYS_OK": False,
     "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
 }
+BAG_OAUTH_TOKEN_URL = env.str(
+    "BAG_OAUTH_TOKEN_URL",
+    default="",
+)
+BAG_URL = env.str(
+    "BAG_URL",
+    default="",
+)
+BAG_INFO_URL = env.str(
+    "BAG_INFO_URL",
+    default=f"{BAG_URL}/info",
+)
+BAG_AO_URL = env.str("BAG_AO_URL", default=f"{BAG_URL}/adresseerbareobjecten")
+BAG_AD_URL = env.str("BAG_AD_URL", default=f"{BAG_URL}/adressen")
+BAG_AU_URL = env.str("BAG_AU_URL", default=f"{BAG_URL}/adressenuitgebreid")
+BAG_BR_URL = env.str("BAG_BR_URL", default=f"{BAG_URL}/bronhouders")
+BAG_LP_URL = env.str("BAG_LP_URL", default=f"{BAG_URL}/ligplaatsen")
+BAG_NA_URL = env.str("BAG_NA_URL", default=f"{BAG_URL}/nummeraanduidingen")
+BAG_OR_URL = env.str("BAG_OR_URL", default=f"{BAG_URL}/openbareruimten")
+BAG_PA_URL = env.str("BAG_PA_URL", default=f"{BAG_URL}/panden")
+BAG_SP_URL = env.str("BAG_SP_URL", default=f"{BAG_URL}/standplaatsen")
+BAG_VO_URL = env.str("BAG_VO_URL", default=f"{BAG_URL}/verblijfsobjecten")
+BAG_WP_URL = env.str("BAG_WP_URL", default=f"{BAG_URL}/woonplaatsen")
+
+# -- Local app settings
+BACKEND_API = env.str("BACKEND_API", "mock")
+
+# These OAuth settings are for authenticating the backend with the BRP OAuth endpoint.
+# Not to be confused with the settings for validating the client token (OAUTH_JWKS_URL above).
+if _USE_SECRET_STORE or CLOUD_ENV.startswith("azure"):
+    BAG_OAUTH_CLIENT_SECRET = Path("/mnt/secrets-store/brp-rvig-client-secret").read_text()
+else:
+    BAG_OAUTH_CLIENT_SECRET = env.str("BAG_OAUTH_CLIENT_SECRET", default="")
+
+BAG_OAUTH_CLIENT_ID = env.str("BAG_OAUTH_CLIENT_ID", default=None)
+
+# Scope is AfnemerID + Amsterdam OIN
+BAG_OAUTH_SCOPE = env.str("BAG_OAUTH_SCOPE", "510193-00000001002564440000")
