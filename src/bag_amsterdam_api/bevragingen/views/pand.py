@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class PandView(BaseProxyView):
     endpoint_url = settings.BAG_PA_URL
     service_log_id = "panden"
-    filter_dto = dtos.PandenFilter
+    query_parameters = dtos.PandenQP
 
 
 class PandDetailView(BaseProxyView):
     endpoint_url = settings.BAG_PA_URL
     service_log_id = "panden"
-    filter_dto = dtos.PandenDetailFilter
+    query_parameters = dtos.PandenDetailQP
 
 
 class PandTimeRegView(BaseProxyView):

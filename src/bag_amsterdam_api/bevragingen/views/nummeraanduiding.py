@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class NummeraanduidingView(BaseProxyView):
     endpoint_url = settings.BAG_NA_URL
     service_log_id = "nummeraanduidingen"
-    filter_dto = dtos.NummeraanduidingFilter
+    query_parameters = dtos.NummeraanduidingQP
 
 
 class NummeraanduidingDetailView(BaseProxyView):
     endpoint_url = settings.BAG_NA_URL
     service_log_id = "nummeraanduidingen"
-    filter_dto = dtos.NummeraanduidingDetailFilter
+    query_parameters = dtos.NummeraanduidingDetailQP
 
 
 class NummeraanduidingTimeRegView(BaseProxyView):

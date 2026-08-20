@@ -221,6 +221,7 @@ REST_FRAMEWORK = dict(
         # The HTML rendering is not needed and conflicts with the exception_handler code.
         "rest_framework.renderers.JSONRenderer",
     ],
+    EXCEPTION_HANDLER="bag_amsterdam_api.views.exception_handler",
     UNAUTHENTICATED_USER=None,  # Avoid importing django.contrib.auth.models
     UNAUTHENTICATED_TOKEN=None,
     URL_FORMAT_OVERRIDE="_format",  # use ?_format=.. instead of ?format=..

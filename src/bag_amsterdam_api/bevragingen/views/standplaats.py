@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class StandplaatsView(BaseProxyView):
     endpoint_url = settings.BAG_SP_URL
     service_log_id = "standplaatsen"
-    filter_dto = dtos.StandplaatsenFilter
+    query_parameters = dtos.StandplaatsenQP
 
 
 class StandplaatsDetailView(BaseProxyView):
     endpoint_url = settings.BAG_SP_URL
     service_log_id = "standplaatsen"
-    filter_dto = dtos.StandplaatsenDetailFilter
+    query_parameters = dtos.StandplaatsenDetailQP
 
 
 class StandplaatsTimeRegView(BaseProxyView):

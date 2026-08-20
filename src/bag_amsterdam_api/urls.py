@@ -4,11 +4,12 @@ from django.urls import include, path
 
 import bag_amsterdam_api.bevragingen.urls
 
-from .views import pulse
+from . import views
 
 urlpatterns = [
     path("bevragingen/", include(bag_amsterdam_api.bevragingen.urls)),
-    path("pulse", pulse),
+    path("pulse", views.pulse),
+    path("", views.RootView.as_view()),
 ]
 
 if settings.DEBUG:
