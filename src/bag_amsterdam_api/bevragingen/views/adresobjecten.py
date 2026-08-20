@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class AdresseerbaarObjectView(BaseProxyView):
     endpoint_url = settings.BAG_AO_URL
     service_log_id = "adresseerbareobjecten"
-    filter_dto = dtos.AdresObjectFilter
+    query_parameters = dtos.AdresObjectQP
 
 
 class AdresseerbaarObjectDetailView(BaseProxyView):
     endpoint_url = settings.BAG_AO_URL
     service_log_id = "adresseerbareobjecten"
-    filter_dto = dtos.AdresObjectDetailFilter
+    query_parameters = dtos.AdresObjectDetailQP
 
 
 class AdresseerbaarObjectLvcView(BaseProxyView):

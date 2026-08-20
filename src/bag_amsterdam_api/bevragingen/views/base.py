@@ -19,8 +19,6 @@ from bag_amsterdam_api.settings import URL
 
 logger = logging.getLogger(__name__)
 
-# DictOfDicts = dict[str, dict[str, dict]]
-
 
 class ClientMixin(APIView):
     #: Define which additional scopes are needed
@@ -83,8 +81,8 @@ class BaseProxyView(ClientMixin, APIView):
     endpoint_url: str = None
     #: The based scopes needed for all requests
     needed_scopes: set = {"fp_mdw"}
-    #: The filter dto's needed for filtering
-    filter_dto: str = None
+    #: The query parameters needed for filtering
+    query_parameters: str = None
 
     def initial(self, request: Request, *args, **kwargs):
         """DRF-level initialization for all request types."""
@@ -136,17 +134,14 @@ class BaseProxyView(ClientMixin, APIView):
         ]
 
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        params = self.get_query_parameters()
+        return Response(params)
 
-    def get_queryparams(self):
-        # stuurt alleen data door, dus alleen check als er query_params
-        # zijn, zijn deze dan voor dit endpoint geldig uit de lijst query_params voor
-        # dit endpoint en zijn ze van het juiste type?
-        # dus extract query params, transformeer naar dto, check of deze onder endpoint vallen,
-        # check of ze juiste type hebben, en als gevalideerd stuur door, anders thro exception?
+    def get_query_parameters(self):
+        """Validate query parameters per endpoint with pydantic."""
         try:
-            filter_dto = self.filter_dto.model_validate(self.request.query_params)
+            query_parameters = self.query_parameters.model_validate(self.request.query_params)
         except PydanticValError as e:
-            raise ValidationError(e.errors()) from e
+            raise ValidationError({"detail": e.errors()}) from e
 
-        return filter_dto.model_dump(exclude_none=True)
+        return query_parameters.model_dump(exclude_none=True)

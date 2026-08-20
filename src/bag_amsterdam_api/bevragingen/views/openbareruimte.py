@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class OpenbareRuimteView(BaseProxyView):
     endpoint_url = settings.BAG_OR_URL
     service_log_id = "openbareruimten"
-    filter_dto = dtos.OpenbareruimtenFilter
+    query_parameters = dtos.OpenbareruimtenQP
 
 
 class OpenbareRuimteDetailView(BaseProxyView):
     endpoint_url = settings.BAG_OR_URL
     service_log_id = "openbareruimten"
-    filter_dto = dtos.OpenbareruimtenDetailFilter
+    query_parameters = dtos.OpenbareruimtenDetailQP
 
 
 class OpenbareRuimteTimeRegView(BaseProxyView):

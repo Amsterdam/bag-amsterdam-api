@@ -18,14 +18,9 @@ class AdresDetails(BaseModel):
     exacte_match: bool | None = None
 
 
-class AdresObjectDetailFilter(BaseModel):
-    # Forbid extra query_parameters send through this /adres/{id} endpoint
+class AdresObjectDetailQP(BaseModel):
+    # Forbid extra query_parameters send through this endpoint
     model_config = ConfigDict(extra="forbid")
-    # AdressFilter.model_validate({
-    #     "street": "Main Street",
-    #     "foo": "bar",
-    # })
-    # --> ValidationError: Extra inputs are not permitted
     adresseerbaar_object_identificatie: str | None = None
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -33,7 +28,7 @@ class AdresObjectDetailFilter(BaseModel):
     huidig: bool | None = None
 
 
-class AdresObjectFilter(AdresObjectDetailFilter):
+class AdresObjectQP(AdresObjectDetailQP):
     model_config = ConfigDict(extra="forbid", use_enum_values=True)  # To access raw string value
     nummeraanduiding_identificatie: str | None = None
     page: int | None = None
@@ -46,18 +41,18 @@ class AdresObjectFilter(AdresObjectDetailFilter):
     pand_identificaties: list[str] | None = None
 
 
-class AdresObjectLvcFilter(BaseModel):
+class AdresObjectLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class AdressenDetailFilter(BaseModel):
+class AdressenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expand: str | None = None
     inclusief_eindstatus: bool | None = None
 
 
-class AdressenFilter(AdresDetails, AdressenDetailFilter):
+class AdressenQP(AdresDetails, AdressenDetailQP):
     model_config = ConfigDict(extra="forbid")
     zoekresultaat_identificatie: str | None = None
     adresseerbaar_object_identificatie: str | None = None
@@ -70,12 +65,12 @@ class AdressenFilter(AdresDetails, AdressenDetailFilter):
     openbare_ruimte_identificatie: str | None = None
 
 
-class AdressenUitgebreidDetailFilter(BaseModel):
+class AdressenUitgebreidDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     inclusief_eindstatus: bool | None = None
 
 
-class AdressenUitgebreidFilter(AdresDetails, AdressenUitgebreidDetailFilter):
+class AdressenUitgebreidQP(AdresDetails, AdressenUitgebreidDetailQP):
     model_config = ConfigDict(extra="forbid")
     adresseerbaar_object_identificatie: str | None = None
     woonplaats_naam: str | None = None
@@ -86,18 +81,18 @@ class AdressenUitgebreidFilter(AdresDetails, AdressenUitgebreidDetailFilter):
     pand_identificatie: str | None = None
 
 
-class BronhoudersDetailFilter(BaseModel):
+class BronhoudersDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
 
 
-class BronhoudersFilter(BronhoudersDetailFilter):
+class BronhoudersQP(BronhoudersDetailQP):
     model_config = ConfigDict(extra="forbid")
     object_identificatie: str | None = None
 
 
-class LigplaatsenDetailFilter(BaseModel):
+class LigplaatsenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -105,7 +100,7 @@ class LigplaatsenDetailFilter(BaseModel):
     huidig: bool | None = None
 
 
-class LigplaatsenFilter(LigplaatsenDetailFilter):
+class LigplaatsenQP(LigplaatsenDetailQP):
     model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
@@ -113,12 +108,12 @@ class LigplaatsenFilter(LigplaatsenDetailFilter):
     bbox: BoundingBox | None = None
 
 
-class LigplaatsenLvcFilter(BaseModel):
+class LigplaatsenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class NummeraanduidingDetailFilter(BaseModel):
+class NummeraanduidingDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -126,7 +121,7 @@ class NummeraanduidingDetailFilter(BaseModel):
     huidig: bool | None = None
 
 
-class NummeraanduidingFilter(AdresDetails, NummeraanduidingDetailFilter):
+class NummeraanduidingQP(AdresDetails, NummeraanduidingDetailQP):
     model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
@@ -136,12 +131,12 @@ class NummeraanduidingFilter(AdresDetails, NummeraanduidingDetailFilter):
     pand_identificatie: str | None = None
 
 
-class NummeraanduidingLvcFilter(BaseModel):
+class NummeraanduidingLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class OpenbareruimtenDetailFilter(BaseModel):
+class OpenbareruimtenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -149,7 +144,7 @@ class OpenbareruimtenDetailFilter(BaseModel):
     huidig: bool | None = None
 
 
-class OpenbareruimtenFilter(OpenbareruimtenDetailFilter):
+class OpenbareruimtenQP(OpenbareruimtenDetailQP):
     model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
@@ -158,19 +153,19 @@ class OpenbareruimtenFilter(OpenbareruimtenDetailFilter):
     page_size: int | None = None
 
 
-class OpenbareruimtenLvcFilter(BaseModel):
+class OpenbareruimtenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class PandenDetailFilter(BaseModel):
+class PandenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
 
 
-class PandenFilter(PandenDetailFilter):
+class PandenQP(PandenDetailQP):
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
     page: int | None = None
     page_size: int | None = None
@@ -183,12 +178,12 @@ class PandenFilter(PandenDetailFilter):
     adresseerbaar_object_identificatie: str | None = None
 
 
-class PandenLvcFilter(BaseModel):
+class PandenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class StandplaatsenDetailFilter(BaseModel):
+class StandplaatsenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -196,7 +191,7 @@ class StandplaatsenDetailFilter(BaseModel):
     expand: str | None = None
 
 
-class StandplaatsenFilter(StandplaatsenDetailFilter):
+class StandplaatsenQP(StandplaatsenDetailQP):
     model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
@@ -204,12 +199,12 @@ class StandplaatsenFilter(StandplaatsenDetailFilter):
     bbox: BoundingBox | None = None
 
 
-class StandplaatsenLvcFilter(BaseModel):
+class StandplaatsenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class VerblijfsobjectenDetailFilter(BaseModel):
+class VerblijfsobjectenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -217,7 +212,7 @@ class VerblijfsobjectenDetailFilter(BaseModel):
     expand: str | None = None
 
 
-class VerblijfsobjectenFilter(VerblijfsobjectenDetailFilter):
+class VerblijfsobjectenQP(VerblijfsobjectenDetailQP):
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
     pand_identificatie: str | None = None
     page: int | None = None
@@ -228,12 +223,12 @@ class VerblijfsobjectenFilter(VerblijfsobjectenDetailFilter):
     gebruiksdoelen: list[enums.Gebruiksdoel] | None = None
 
 
-class VerblijfsobjectenLvcFilter(BaseModel):
+class VerblijfsobjectenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
-class WoonplaatsenDetailFilter(BaseModel):
+class WoonplaatsenDetailQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -241,7 +236,7 @@ class WoonplaatsenDetailFilter(BaseModel):
     expand: str | None = None
 
 
-class WoonplaatsenFilter(WoonplaatsenDetailFilter):
+class WoonplaatsenQP(WoonplaatsenDetailQP):
     model_config = ConfigDict(extra="forbid")
     naam: str | None = None
     page: int | None = None
@@ -250,26 +245,18 @@ class WoonplaatsenFilter(WoonplaatsenDetailFilter):
     bbox: BoundingBox | None = None
 
 
-class WoonplaatsenLvcFilter(BaseModel):
+class WoonplaatsenLvcQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
     expand: str | None = None
 
 
-class WoonplaatsenTimestampLvFilter(BaseModel):
+class WoonplaatsenTimestampLvQP(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expand: str | None = None
 
 
 class Oppervlakte(BaseModel):
-    """Geef de minimale en maximale oppervlakte op waarbinnen je wilt zoeken (in m2).
-    Alleen verblijfsobjecten hebben een oppervlakte en kunnen met deze parameter worden gevonden.
-    Ligplaatsen en standplaatsen hebben geen oppervlakte en kunnen met deze parameter niet
-    worden gevonden. De oppervlakte van een verblijfsobject is een natuurlijk getal tussen 1
-    (minimaal) en 999999 (maximaal). Het is niet toegestaan voor min een grotere waarde op te
-    geven dan voor max. Is min > max dan treedt een foutmelding op.
-    Bv: oppervlakte[min]=100&oppervlakte[max]=200"""
-
     min: Annotated[int, Field(gt=1, lt=1000000)] | None = None
     max: Annotated[int, Field(gt=1, lt=1000000)] | None = None
 
@@ -283,10 +270,6 @@ class Oppervlakte(BaseModel):
 
 
 class Bouwjaar(BaseModel):
-    """Bouwjaar van het pand. Geeft het minimale en/of maximale bouwjaar aan van het pand
-    waarnaar moet worden gezocht. Een bouwjaar is een natuurlijk getal tussen 0 (minimaal)
-    en 9999 (maximaal). Bv: bouwjaar[min]=1970&bouwjaar[max]=2010"""
-
     min: Annotated[int, Field(gte=0)] | None = None
     max: Annotated[int, Field(lte=9999)] | None = None
 
@@ -299,10 +282,6 @@ class GeometryPoint(BaseModel):
 
 
 def validate_bbox(bbox: list[float]) -> list[float]:
-    """Met de content-crs header wordt aangegeven in welk CRS de coördinaten van de bbox zijn.
-    Coördinaten worden als volgt opgegeven: linksonder x, linksonder y, rechtsboven x,
-    rechtsboven y. De oppervlakte van de bounding box mag maximaal 250.000 vierkante meter zijn.
-    """
     ll, lr, ul, ur = bbox[:4]
 
     # Coordinates are in WSG 84

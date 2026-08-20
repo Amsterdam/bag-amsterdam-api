@@ -15,22 +15,22 @@ class AdresHealthView(BaseHealthCheckView):
 class AdresView(BaseProxyView):
     endpoint_url = settings.BAG_AD_URL
     service_log_id = "adressen"
-    filter_dto = dtos.AdressenFilter
+    query_parameters = dtos.AdressenQP
 
 
 class AdresDetailView(BaseProxyView):
     endpoint_url = settings.BAG_AD_URL
     service_log_id = "adressen"
-    filter_dto = dtos.AdressenDetailFilter
+    query_parameters = dtos.AdressenDetailQP
 
 
 class AdresUitgebreidView(BaseProxyView):
     endpoint_url = settings.BAG_AU_URL
     service_log_id = "adressenuitgebreid"
-    filter_dto = dtos.AdressenUitgebreidFilter
+    query_parameters = dtos.AdressenUitgebreidQP
 
 
 class AdresUitgebreidDetailView(BaseProxyView):
     endpoint_url = settings.BAG_AU_URL
     service_log_id = "adressenuitgebreid"
-    filter_dto = dtos.AdressenUitgebreidDetailFilter
+    query_parameters = dtos.AdressenUitgebreidDetailQP

@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class WoonplaatsView(BaseProxyView):
     endpoint_url = settings.BAG_WP_URL
     service_log_id = "woonplaatsen"
-    filter_dto = dtos.WoonplaatsenFilter
+    query_parameters = dtos.WoonplaatsenQP
 
 
 class WoonplaatsDetailView(BaseProxyView):
     endpoint_url = f"settings.BAG_WP_URL/{id}"
     service_log_id = "woonplaatsen"
-    filter_dto = dtos.WoonplaatsenDetailFilter
+    query_parameters = dtos.WoonplaatsenDetailQP
 
 
 class WoonplaatsTimeRegView(BaseProxyView):

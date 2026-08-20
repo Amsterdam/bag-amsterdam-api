@@ -8,13 +8,13 @@ from .base import BaseProxyView
 class BronhouderView(BaseProxyView):
     endpoint_url = settings.BAG_BR_URL
     service_log_id = "bronhouders"
-    filter_dto = dtos.BronhoudersFilter
+    query_parameters = dtos.BronhoudersQP
 
 
 class BronhouderDetailView(BaseProxyView):
     endpoint_url = settings.BAG_BR_URL
     service_log_id = "bronhouders"
-    filter_dto = dtos.BronhoudersDetailFilter
+    query_parameters = dtos.BronhoudersDetailQP
 
 
 class BronhouderTimeRegView(BaseProxyView):

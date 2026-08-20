@@ -30,8 +30,14 @@ class TestBaseProxyView:
         """Prove that accessing the view fails without a login token."""
         response = api_client.get(url)
         assert response.status_code == 401
-        assert response.data["detail"] == "Authentication credentials were not provided."
-        assert response.data["detail"].code == "not_authenticated"
+        assert response.data == {
+            "type": "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
+            "code": "notAuthenticated",
+            "title": "Authentication credentials were not provided.",
+            "detail": "",
+            "status": 401,
+            "instance": url,
+        }
 
     @pytest.mark.parametrize(
         "url, view_name",
@@ -63,54 +69,6 @@ class TestBaseProxyView:
             ],
         }
 
-    # def test_invalid_api_key(self, api_client, requests_mock, caplog, common_headers):
-    #     """Prove that incorrect API-key settings are handled gracefully."""
-    #     requests_mock.post(
-    #         "/lap/api/brp/personen",
-    #         json={
-    #             "type": "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
-    #             "title": "Niet correct geauthenticeerd.",
-    #             "status": 401,
-    #             "instance": "/lap/api/brp/personen",
-    #             "code": "authentication",
-    #         },
-    #         status_code=401,
-    #         headers={"content-type": "application/json"},
-    #     )
-
-    #     url = reverse("bag-adressen")
-    #     token = build_jwt_token(["fp_mdw"])
-    #     response = api_client.post(
-    #         url,
-    #         {
-    #             "type": "ZoekMetPostcodeEnHuisnummer",
-    #             "postcode": "1074VE",
-    #             "huisnummer": 1,
-    #             "fields": ["naam.aanduidingNaamgebruik"],
-    #         },
-    #         headers={
-    #             "Authorization": f"Bearer {token}",
-    #             **common_headers,
-    #         },
-    #     )
-
-    #     assert response.status_code == 502
-    #     assert any(
-    #         m.startswith(
-    #             "Access granted for 'personen.ZoekMetPostcodeEnHuisnummer' to '"
-    #         )
-    #         for m in caplog.messages
-    #     ), caplog.messages
-    #     assert response.json() == {
-    #         "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.3",
-    #         "title": "Connection failed (bad gateway)",
-    #         "status": 502,
-    #         "detail": "Backend is improperly configured,
-    #         "final endpoint rejected our credentials.",
-    #         "code": "backendConfig",
-    #         "instance": "/bevragingen/v1/personen",
-    #     }
-
     @pytest.mark.parametrize("remove_header", ["X-Correlation-ID", "X-User", "X-Task-Description"])
     def test_missing_common_headers(self, api_client, common_headers, remove_header):
         """Prove that not providing the common headers is accurately reported back"""
@@ -126,84 +84,74 @@ class TestBaseProxyView:
             headers=headers,
         )
         assert response.status_code == 403
-        assert response.data["detail"] == f"A required header is missing: {remove_header.lower()}"
-        # assert response.json() == {
-        #     "code": "missingHeaders",
-        #     "detail": (
-        #         "The following headers are required:
-        #         "X-User, X-Correlation-ID, X-Task-Description."
-        #     ),
-        #     "instance": "/bevragingen/v1/personen",
-        #     "status": 403,
-        #     "title": "You do not have permission to perform this action.",
-        #     "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
-        # }
+        assert response.json() == {
+            "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
+            "code": "missingHeaders",
+            "title": "You do not have permission to perform this action.",
+            "detail": (f"A required header is missing: {remove_header.lower()}"),
+            "status": 403,
+            "instance": "/bevragingen/v1/adressen",
+        }
 
-    # @pytest.mark.parametrize(
-    #     "content_type",
-    #     [
-    #         "application/json",
-    #         "application/problem+json",
-    #         "application/json;charset=utf-8",
-    #     ],
-    # )
-    # def test_error_response(
-    #     self, api_client, requests_mock, caplog, common_headers, content_type
-    # ):
-    #     """Prove that RvIG BRP API errors are handled gracefully for all known content-types"""
-    #     requests_mock.post(
-    #         "/lap/api/brp/personen",
-    #         json={
-    #             "invalidParams": [
-    #                 {
-    #                     "name": "burgerservicenummer",
-    #                     "code": "array",
-    #                     "reason": "Parameter is geen array.",
-    #                 }
-    #             ],
-    #             "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-    #             "title": "Een of meerdere parameters zijn niet correct.",
-    #             "status": 400,
-    #             "detail": "De foutieve parameter(s) zijn: burgerservicenummer.",
-    #             "instance": "/lap/api/brp/personen",
-    #             "code": "paramsValidation",
-    #         },
-    #         status_code=400,
-    #         headers={"content-type": content_type},
-    #     )
+    def test_invalid_query_parameters(self, api_client, common_headers):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["fp_mdw"])
+        response = api_client.get(
+            url,
+            {"unknown": "value"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
 
-    #     url = reverse("bag-adressen")
-    #     token = build_jwt_token(["fp_mdw"])
-    #     response = api_client.post(
-    #         url,
-    #         {
-    #             "type": "RaadpleegMetBurgerservicenummer",
-    #             "burgerservicenummer": "000009830",
-    #         },
-    #         headers={
-    #             "Authorization": f"Bearer {token}",
-    #             **common_headers,
-    #         },
-    #     )
-    #     assert response.status_code == 400
-    #     assert any(
-    #         m.startswith(
-    #             "Access granted for 'personen.RaadpleegMetBurgerservicenummer' to '"
-    #         )
-    #         for m in caplog.messages
-    #     ), caplog.messages
-    #     assert response.json() == {
-    #         "code": "paramsValidation",
-    #         "detail": "De foutieve parameter(s) zijn: burgerservicenummer.",
-    #         "instance": "/bevragingen/v1/personen",
-    #         "invalidParams": [
-    #             {
-    #                 "code": "array",
-    #                 "name": "burgerservicenummer",
-    #                 "reason": "Parameter is geen array.",
-    #             }
-    #         ],
-    #         "status": 400,
-    #         "title": "Een of meerdere parameters zijn niet correct.",
-    #         "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
-    #     }
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": [
+                {
+                    "type": "extra_forbidden",
+                    "loc": ["unknown"],
+                    "msg": "Extra inputs are not permitted",
+                    "input": "value",
+                    "url": "https://errors.pydantic.dev/2.13/v/extra_forbidden",
+                }
+            ]
+        }
+
+        response = api_client.get(
+            url,
+            {"page_size": "not_an_int"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": [
+                {
+                    "type": "int_parsing",
+                    "loc": ["page_size"],
+                    "msg": "Input should be a valid integer, unable to parse string as an integer",
+                    "input": "not_an_int",
+                    "url": "https://errors.pydantic.dev/2.13/v/int_parsing",
+                }
+            ]
+        }
+
+    def test_valid_query_parameters(self, api_client, common_headers):
+        url = reverse("bag-adresobjecten")
+        token = build_jwt_token(["fp_mdw"])
+        response = api_client.get(
+            url,
+            {"type": "V"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {"type": "V"}
