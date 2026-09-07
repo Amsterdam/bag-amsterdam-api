@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from bag_amsterdam_api import datatransferobjects as dtos
+from bag_amsterdam_api import query_parameters as qp
 
 from .base import BaseHealthCheckView, BaseProxyView
 
@@ -15,22 +15,28 @@ class AdresHealthView(BaseHealthCheckView):
 class AdresView(BaseProxyView):
     endpoint_url = settings.BAG_AD_URL
     service_log_id = "adressen"
-    query_parameters = dtos.AdressenQP
+    query_parameters = qp.AdressenQP
 
 
 class AdresDetailView(BaseProxyView):
-    endpoint_url = settings.BAG_AD_URL
+    base_url = settings.BAG_AD_URL
+    endpoint_url = "{base_url}/{id}"
     service_log_id = "adressen"
-    query_parameters = dtos.AdressenDetailQP
+    query_parameters = qp.AdressenDetailQP
+
+    # def get(self, request, *args, **kwargs):
+    #     id = kwargs["nummeraanduidingIdentificatie"]
+    #     endpoint_url = f"{settings.BAG_AD_URL}/{id}"
 
 
 class AdresUitgebreidView(BaseProxyView):
     endpoint_url = settings.BAG_AU_URL
     service_log_id = "adressenuitgebreid"
-    query_parameters = dtos.AdressenUitgebreidQP
+    query_parameters = qp.AdressenUitgebreidQP
 
 
 class AdresUitgebreidDetailView(BaseProxyView):
-    endpoint_url = settings.BAG_AU_URL
+    base_url = settings.BAG_AU_URL
+    endpoint_url = "{base_url}/{id}"
     service_log_id = "adressenuitgebreid"
-    query_parameters = dtos.AdressenUitgebreidDetailQP
+    query_parameters = qp.AdressenUitgebreidDetailQP

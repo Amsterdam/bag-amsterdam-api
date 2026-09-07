@@ -77,6 +77,8 @@ class BaseProxyView(ClientMixin, APIView):
 
     #: An random short-name for the service name in logging statements
     service_log_id: str = None
+    #: Which base endpoint to proxy
+    base_url: str = None
     #: Which endpoint to proxy
     endpoint_url: str = None
     #: The based scopes needed for all requests
@@ -86,7 +88,10 @@ class BaseProxyView(ClientMixin, APIView):
 
     def initial(self, request: Request, *args, **kwargs):
         """DRF-level initialization for all request types."""
-        self._base_url = reverse(request.resolver_match.view_name)
+        self._base_url = reverse(
+            request.resolver_match.view_name,
+            kwargs=request.resolver_match.kwargs,
+        )
         self.client = self.get_client()
         self.start_time = time.perf_counter_ns()
         self.start_date = now()
@@ -134,8 +139,17 @@ class BaseProxyView(ClientMixin, APIView):
         ]
 
     def get(self, request, *args, **kwargs):
-        params = self.get_query_parameters()
-        return Response(params)
+        endpoint_url = self.endpoint_url.format(
+            base_url=self.base_url,
+            **kwargs,
+        )
+        self.client.endpoint_url = endpoint_url
+        response = self.client.call(params=self.get_query_parameters())
+
+        return Response(
+            response.json(),
+            status=response.status_code,
+        )
 
     def get_query_parameters(self):
         """Validate query parameters per endpoint with pydantic."""
