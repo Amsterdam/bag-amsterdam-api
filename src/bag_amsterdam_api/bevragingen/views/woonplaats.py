@@ -1,22 +1,33 @@
 from django.conf import settings
 
-from bag_amsterdam_api import datatransferobjects as dtos
+from bag_amsterdam_api import query_parameters as qp
 
 from .base import BaseProxyView
 
+BASE_URL = settings.BAG_WP_URL
+
 
 class WoonplaatsView(BaseProxyView):
-    endpoint_url = settings.BAG_WP_URL
+    endpoint_url = BASE_URL
     service_log_id = "woonplaatsen"
-    query_parameters = dtos.WoonplaatsenQP
+    query_parameters = qp.WoonplaatsenQP
 
 
 class WoonplaatsDetailView(BaseProxyView):
-    endpoint_url = f"settings.BAG_WP_URL/{id}"
+    base_url = settings.BAG_WP_URL
+    endpoint_url = "{BASE_URL}/{id}"
     service_log_id = "woonplaatsen"
-    query_parameters = dtos.WoonplaatsenDetailQP
+    query_parameters = qp.WoonplaatsenDetailQP
 
 
-class WoonplaatsTimeRegView(BaseProxyView):
-    endpoint_url = settings.BAG_WP_URL
+class WoonplaatsLvcView(BaseProxyView):
+    base_url = settings.BAG_WP_URL
+    endpoint_url = "{BASE_URL}/{id}/lvc"
+    service_log_id = "woonplaatsen"
+    query_parameters = qp.WoonplaatsenLvcQP
+
+
+class WoonplaatsTimeRegistrationView(BaseProxyView):
+    base_url = settings.BAG_WP_URL
+    endpoint_url = "{BASE_URL}/{id}/{version}/{timestamp}"
     service_log_id = "woonplaatsen"

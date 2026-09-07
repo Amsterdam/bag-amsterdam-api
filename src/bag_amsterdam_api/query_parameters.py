@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -275,10 +275,8 @@ class Bouwjaar(BaseModel):
 
 
 class GeometryPoint(BaseModel):
-    """Punt conform OGC API Features standaard. Met de content-crs header wordt aangegeven in
-    welk CRS de coördinaten van het punt is. Example : OrderedMap { "type": "Point",
-    "coordinates": List [ 196733.51, 439931.89 ] }
-    """
+    type: Literal["Point"] = "Point"
+    coordinates: tuple[float, float] = Field()
 
 
 def validate_bbox(bbox: list[float]) -> list[float]:
