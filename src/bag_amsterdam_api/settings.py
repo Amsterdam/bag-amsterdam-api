@@ -234,19 +234,20 @@ if DEBUG:
     )
 
 DATAPUNT_AUTHZ = {
-    # To verify JWT tokens, either the PUB_JWKS or a OAUTH_JWKS_URL needs to be set.
+    # To verify JWT tokens, the PUB_JWKS needs to be set.
     "JWKS": os.getenv("PUB_JWKS"),
-    "JWKS_URL": os.getenv("OAUTH_JWKS_URL"),
-    "JWKS_URLS": env.list("OAUTH_JWKS_URLS", default=[]),  # To support both keyclock and Entra ID
-    "CHECK_CLAIMS": env.dict("OAUTH_CHECK_CLAIMS", default={}),
     # "ALWAYS_OK": True if DEBUG else False,
     "ALWAYS_OK": False,
     "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
 }
-BAG_OAUTH_TOKEN_URL = env.str(
-    "BAG_OAUTH_TOKEN_URL",
-    default="",
-)
+
+# -- Local app settings
+
+if _USE_SECRET_STORE or CLOUD_ENV.startswith("azure"):
+    BAG_API_KEY = Path("/mnt/secrets-store/bag-proxy-key").read_text()
+else:
+    BAG_API_KEY = env.str("BAG_API_KEY", "")
+
 BAG_URL = env.str(
     "BAG_URL",
     default="",
@@ -269,15 +270,3 @@ BAG_WP_URL = env.str("BAG_WP_URL", default=f"{BAG_URL}/woonplaatsen")
 
 # -- Local app settings
 BACKEND_API = env.str("BACKEND_API", "mock")
-
-# These OAuth settings are for authenticating the backend with the BRP OAuth endpoint.
-# Not to be confused with the settings for validating the client token (OAUTH_JWKS_URL above).
-if _USE_SECRET_STORE or CLOUD_ENV.startswith("azure"):
-    BAG_OAUTH_CLIENT_SECRET = Path("/mnt/secrets-store/brp-rvig-client-secret").read_text()
-else:
-    BAG_OAUTH_CLIENT_SECRET = env.str("BAG_OAUTH_CLIENT_SECRET", default="")
-
-BAG_OAUTH_CLIENT_ID = env.str("BAG_OAUTH_CLIENT_ID", default=None)
-
-# Scope is AfnemerID + Amsterdam OIN
-BAG_OAUTH_SCOPE = env.str("BAG_OAUTH_SCOPE", "510193-00000001002564440000")

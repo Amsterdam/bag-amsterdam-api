@@ -9,11 +9,67 @@ class TestBaseProxyView:
     This is tested through the concrete implementations though.
     """
 
+    # RESPONSE_BEWONINGEN = {
+    #     "bewoningen": [
+    #         {
+    #             "adresseerbaarObjectIdentificatie": "0518010000832200",
+    #             "periode": {"datumVan": "2020-09-24", "datumTot": "2020-09-25"},
+    #             "bewoners": [{"burgerservicenummer": "999993240"}],
+    #             "mogelijkeBewoners": [{"burgerservicenummer": "999993241"}],
+    #         },
+    #         {
+    #             "adresseerbaarObjectIdentificatie": "0518010000832200",
+    #             "periode": {"datumVan": "2016-03-02", "datumTot": "2020-09-24"},
+    #             "bewoners": [{"burgerservicenummer": "999991371"}],
+    #             "mogelijkeBewoners": [],
+    #         },
+    #     ]
+    # }
+
+    RESPONSE_ADRESSEN = {
+        "openbareRuimteNaam": "Belgiëlaan",
+        "huisnummer": 1,
+        "woonplaatsNaam": "Hazerswoude-Dorp",
+        "nummeraanduidingIdentificatie": "0484200002040489",
+        "openbareRuimteIdentificatie": "1672300000000110",
+        "woonplaatsIdentificatie": "2852",
+        "_links": {
+            "adresseerbaarObject": {
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/verblijfsobjecten/0484010002033603"
+            },
+            "nummeraanduiding": {
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/nummeraanduidingen/0484200002040489"
+            },
+            "openbareRuimte": {
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/openbareruimten/1672300000000110"
+            },
+            "panden": [
+                {
+                    "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/panden/0484100000045095"
+                }
+            ],
+            "self": {
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/adressen/0484200002040489"
+            },
+            "woonplaats": {
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/woonplaatsen/2852"
+            },
+        },
+        "adresregel5": "Belgiëlaan 1 A3",
+        "adresregel6": "2391 PH  HAZERSWOUDE-DORP",
+        "adresseerbaarObjectIdentificatie": "0484010002033603",
+        "huisletter": "A",
+        "huisnummertoevoeging": "3",
+        "korteNaam": "Belgiëlaan",
+        "pandIdentificaties": ["0484100000045095"],
+        "postcode": "2391PH",
+    }
+
     @pytest.mark.parametrize(
         "url",
         [
             "/bevragingen/v1/adresseerbareobjecten",
-            "/bevragingen/v1/adressen",
+            "/bevragingen/adressen",
             "/bevragingen/v1/adressenuitgebreid",
             "/bevragingen/v1/info",
             "/bevragingen/v1/bronhouders",
@@ -43,7 +99,7 @@ class TestBaseProxyView:
         "url, view_name",
         [
             ("/bevragingen/v1/adresseerbareobjecten", "Adresseerbaar Object"),
-            ("/bevragingen/v1/adressen", "Adres"),
+            ("/bevragingen/adressen", "Adres"),
             ("/bevragingen/v1/adressenuitgebreid", "Adres Uitgebreid"),
             ("/bevragingen/v1/info", "Info"),
             ("/bevragingen/v1/bronhouders", "Bronhouder"),
@@ -90,7 +146,7 @@ class TestBaseProxyView:
             "title": "You do not have permission to perform this action.",
             "detail": (f"A required header is missing: {remove_header.lower()}"),
             "status": 403,
-            "instance": "/bevragingen/v1/adressen",
+            "instance": "/bevragingen/adressen",
         }
 
     def test_invalid_query_parameters(self, api_client, common_headers):
@@ -141,17 +197,35 @@ class TestBaseProxyView:
             ]
         }
 
-    def test_valid_query_parameters(self, api_client, common_headers):
-        url = reverse("bag-adresobjecten")
+    # def test_valid_query_parameters(self, api_client, common_headers):
+    #     url = reverse("bag-adresobjecten")
+    #     token = build_jwt_token(["fp_mdw"])
+    #     response = api_client.get(
+    #         url,
+    #         {"type": "V"},
+    #         headers={
+    #             "Authorization": f"Bearer {token}",
+    #             **common_headers,
+    #         },
+    #     )
+    #     assert response.status_code == 400
+
+    def test_test_valid_query_params(self, api_client, requests_mock, common_headers):
+        requests_mock.get(
+            "http://localhost:5010/lv/api/bag/bevragingen/adressen/0484200002040489",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adressen")  # bag-adressen-detail geeft noreversematch
         token = build_jwt_token(["fp_mdw"])
         response = api_client.get(
-            url,
-            {"type": "V"},
+            f"{url}?id=0484200002040489",
+            {"expand": "false"},
             headers={
                 "Authorization": f"Bearer {token}",
                 **common_headers,
             },
         )
-
-        assert response.status_code == 200
-        assert response.json() == {"type": "V"}
+        assert response.status_code == 200, response
+        assert response.json() == self.RESPONSE_ADRESSEN, response.data

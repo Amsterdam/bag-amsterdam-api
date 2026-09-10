@@ -3,7 +3,6 @@ import time
 from urllib.parse import urlparse
 
 import requests
-from oauthlib.oauth2 import InvalidClientError
 from requests import ConnectionError, Timeout
 from rest_framework.exceptions import APIException
 
@@ -27,49 +26,48 @@ class BaseBagClient:
     def __init__(
         self,
         endpoint_url,
+        api_key,
     ):
         """Initialize the client configuration.
 
         :param endpoint_url: Full URL of the BAG service.
+        :param api_key: The API key to use
         """
         if not endpoint_url:
             raise ValueError("Missing BAG endpoint URL")
         self.endpoint_url = endpoint_url
+        self._api_key = api_key
         self._host = urlparse(endpoint_url).netloc
-
         self._session = requests.Session()
 
     def __repr__(self):
         return f"<{self.__class__.__qualname__}: {self.endpoint_url}>"
 
-    def call(self, params: dict | None = None) -> requests.Response | APIException:
+    def call(
+        self, hc_request: dict | None = None, params: dict | None = None
+    ) -> requests.Response | APIException:
         """Make an HTTP GET call. kwargs are passed to pool.request."""
-        # dit gaat nog fout met een test?
         logger.debug("calling %s", self.endpoint_url)
         t0 = time.perf_counter_ns()
         try:
-            self._prepare_request()
-
+            # persist api_key across session
+            # self._session.headers.update({'X-Api-Key': self._api_key})
+            # self._prepare_request()
+            print(self.endpoint_url)
             # Using urllib directly instead of requests for performance
             response: requests.Response = self._session.request(
                 "GET",
                 self.endpoint_url,
+                json=hc_request,
                 params=params,
                 timeout=60,
                 headers={
-                    # "Authorization": "Bearer <oauthtoken>" is inserted by requests-oauthlib
                     "Accept": "application/json; charset=utf-8",
+                    # zet ie hem hier ook niet al in de session?
+                    "X-Api-Key": self._api_key,
                     "User-Agent": USER_AGENT,
                 },
             )
-        except InvalidClientError as e:
-            # OAuth client credentials are invalid.
-            logger.error(
-                "Proxy call to %s failed, invalid OAuth client credentials: %s",
-                self._host,
-                e,
-            )
-            raise ServiceUnavailable() from e
         except (TimeoutError, Timeout) as e:
             # Socket timeout
             logger.error(
@@ -113,7 +111,7 @@ class BaseBagClient:
     def _get_http_error(self, response: requests.Response) -> APIException:
         raise NotImplementedError
 
-    def _prepare_request(self):
-        """
-        This method can be overwritten to prepare a request per client.
-        """
+    # def _prepare_request(self):
+    #     """
+    #     This method can be overwritten to prepare a request per client.
+    #     """
