@@ -1,7 +1,7 @@
 [project]
 name = "bag_amsterdam_api"
 version = "0.1"
-description = "This is a proxy service to connect to the RvIG BAG API. It filters requests and enforces token-based authorization."
+description = "This is a proxy service to connect to the kadaster BAG API. It filters requests and enforces token-based authorization."
 url = "https://github.com/Amsterdam/bag-amsterdam-api/"
 author = "Amsterdam Datapunt"
 author_email = "datapunt@amsterdam.nl"

@@ -1,8 +1,12 @@
 import logging
 import time
+from copy import deepcopy
 
+import orjson
+import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.timezone import now
 from pydantic import ValidationError as PydanticValError
@@ -13,7 +17,7 @@ from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
 from rest_framework.views import APIView
 
 from bag_amsterdam_api.bevragingen import authentication, permissions
-from bag_amsterdam_api.bevragingen.clients.rvig import RvIGBagClient
+from bag_amsterdam_api.bevragingen.clients.kadaster import BagClient
 from bag_amsterdam_api.bevragingen.exceptions import RemoteAPIException
 from bag_amsterdam_api.settings import URL
 
@@ -22,19 +26,16 @@ logger = logging.getLogger(__name__)
 
 class ClientMixin(APIView):
     #: Define which additional scopes are needed
-    client_class = RvIGBagClient
+    client_class = BagClient
 
     #: Define the URL for the endpoint
     endpoint_url: URL
 
-    def get_client(self) -> RvIGBagClient:
+    def get_client(self) -> BagClient:
         """Provide the API client class. This can be overwritten per view if needed."""
         return self.client_class(
             endpoint_url=self.endpoint_url,
-            oauth_endpoint_url=settings.BAG_OAUTH_TOKEN_URL,
-            oauth_client_id=settings.BAG_OAUTH_CLIENT_ID,
-            oauth_client_secret=settings.BAG_OAUTH_CLIENT_SECRET,
-            oauth_scope=settings.BAG_OAUTH_SCOPE,
+            api_key=settings.BAG_API_KEY,
         )
 
 
@@ -65,10 +66,10 @@ class BaseHealthCheckView(ClientMixin, APIView):
 
 
 class BaseProxyView(ClientMixin, APIView):
-    """View that proxies RvIG BAG API.
+    """View that proxies kadaster BAG API.
 
     This is a pass-through proxy, but with authorization and extra restrictions added.
-    The subclasses implement the variations between RvIG BAG endpoints.
+    The subclasses implement the variations between kadaster BAG endpoints.
     """
 
     authentication_classes = [authentication.JWTAuthentication]
@@ -77,8 +78,8 @@ class BaseProxyView(ClientMixin, APIView):
 
     #: An random short-name for the service name in logging statements
     service_log_id: str = None
-    #: Which base endpoint to proxy
-    base_url: str = None
+    # #: Which base endpoint to proxy
+    # base_url: str = None
     #: Which endpoint to proxy
     endpoint_url: str = None
     #: The based scopes needed for all requests
@@ -138,18 +139,38 @@ class BaseProxyView(ClientMixin, APIView):
             permissions.IsUserScope(self.needed_scopes),
         ]
 
-    def get(self, request, *args, **kwargs):
-        endpoint_url = self.endpoint_url.format(
-            base_url=self.base_url,
-            **kwargs,
-        )
-        self.client.endpoint_url = endpoint_url
-        response = self.client.call(params=self.get_query_parameters())
+    # @method_decorator(never_cache)
+    def get(self, request: Request, *args, **kwargs):
+        hc_request = request.data.copy()
+        params = self.get_query_parameters()
 
-        return Response(
-            response.json(),
-            status=response.status_code,
+        # Proxy to kadaster BAG API
+        try:
+            downstream_response = self.client.call(hc_request, params)
+        except (APIException, OSError) as e:
+            # Even when the request failed, still log that we did grant access.
+            hc_response = (
+                e.__cause__.response.json()
+                if isinstance(e.__cause__, requests.RequestException)
+                and e.__cause__.response is not None
+                else None
+            )
+
+        # Rewrite the response to pagination still works.
+        # (currently in in-place)
+        hc_response = orjson.loads(downstream_response.text)
+        final_response = deepcopy(hc_response)
+        # And return it.
+        return HttpResponse(
+            orjson.dumps(final_response),
+            content_type=downstream_response.headers.get(
+                "content-type", "application/json; charset=utf-8"
+            ),
         )
+        # return Response(
+        #     response.json(),
+        #     status=response.status_code,
+        # )
 
     def get_query_parameters(self):
         """Validate query parameters per endpoint with pydantic."""

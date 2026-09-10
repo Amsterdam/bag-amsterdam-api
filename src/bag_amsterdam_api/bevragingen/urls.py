@@ -24,9 +24,9 @@ urlpatterns = [
         views.AdresseerbaarObjectLvcView.as_view(),
         name="bag-adresobjecten-lvc",
     ),
-    path("v1/adressen", views.AdresView.as_view(), name="bag-adressen"),
+    path("adressen", views.AdresView.as_view(), name="bag-adressen"),
     path(
-        "v1/adressen/<str:id>",
+        "adressen/<str:id>",
         views.AdresDetailView.as_view(),
         name="bag-adressen-detail",
     ),
