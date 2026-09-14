@@ -1,6 +1,5 @@
 """Access to all BAG views"""
 
-# viewsets gebruiken ipv views?
 # Split in a package for easier maintenance
 from .adres import (
     AdresDetailView,
@@ -59,6 +58,7 @@ from .woonplaats import (
     WoonplaatsView,
 )
 
+# voor nu gekozen voor aparte views in plaats van viewsets, net zoals brp
 __all__ = (
     "IndexView",
     "InfoView",

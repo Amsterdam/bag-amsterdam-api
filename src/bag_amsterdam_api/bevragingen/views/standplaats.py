@@ -12,20 +12,17 @@ class StandplaatsView(BaseProxyView):
 
 
 class StandplaatsDetailView(BaseProxyView):
-    base_url = settings.BAG_SP_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "standplaatsen"
+    endpoint_url = f"{settings.BAG_SP_URL}/{{id}}"
+    service_log_id = "standplaatsen-detail"
     query_parameters = qp.StandplaatsenDetailQP
 
 
 class StandplaatsLvcView(BaseProxyView):
-    base_url = settings.BAG_SP_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "standplaatsen"
+    endpoint_url = f"{settings.BAG_SP_URL}/{{id}}/lvc"
+    service_log_id = "standplaatsen-lvc"
     query_parameters = qp.StandplaatsenLvcQP
 
 
 class StandplaatsTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_SP_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "standplaatsen"
+    endpoint_url = f"{settings.BAG_SP_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "standplaatsen-tmr"

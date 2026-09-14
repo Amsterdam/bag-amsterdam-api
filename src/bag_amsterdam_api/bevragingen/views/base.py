@@ -13,7 +13,6 @@ from pydantic import ValidationError as PydanticValError
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
 from rest_framework.views import APIView
 
 from bag_amsterdam_api.bevragingen import authentication, permissions
@@ -43,7 +42,6 @@ class BaseHealthCheckView(ClientMixin, APIView):
     """View that performs a dummy call to the BAG API for healthchecks."""
 
     authentication_classes = [authentication.JWTAuthentication]
-    throttle_classes = [AnonRateThrottle, ScopedRateThrottle]
 
     dummy_request = {"type": "healthcheck"}
 
@@ -78,8 +76,6 @@ class BaseProxyView(ClientMixin, APIView):
 
     #: An random short-name for the service name in logging statements
     service_log_id: str = None
-    # #: Which base endpoint to proxy
-    # base_url: str = None
     #: Which endpoint to proxy
     endpoint_url: str = None
     #: The based scopes needed for all requests
@@ -139,8 +135,8 @@ class BaseProxyView(ClientMixin, APIView):
             permissions.IsUserScope(self.needed_scopes),
         ]
 
-    # @method_decorator(never_cache)
     def get(self, request: Request, *args, **kwargs):
+        self.client.endpoint_url = self.get_endpoint_url()
         hc_request = request.data.copy()
         params = self.get_query_parameters()
 
@@ -167,10 +163,13 @@ class BaseProxyView(ClientMixin, APIView):
                 "content-type", "application/json; charset=utf-8"
             ),
         )
-        # return Response(
-        #     response.json(),
-        #     status=response.status_code,
-        # )
+
+    def get_endpoint_url(self):
+        """Format endpoint for detail views."""
+        try:
+            return self.endpoint_url.format(**self.kwargs)
+        except KeyError:
+            return self.endpoint_url
 
     def get_query_parameters(self):
         """Validate query parameters per endpoint with pydantic."""

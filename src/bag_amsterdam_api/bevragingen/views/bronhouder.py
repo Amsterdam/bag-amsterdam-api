@@ -12,13 +12,11 @@ class BronhouderView(BaseProxyView):
 
 
 class BronhouderDetailView(BaseProxyView):
-    base_url = settings.BAG_BR_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "bronhouders"
+    endpoint_url = f"{settings.BAG_BR_URL}/{{id}}"
+    service_log_id = "bronhouders-detail"
     query_parameters = qp.BronhoudersDetailQP
 
 
 class BronhouderTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_BR_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "bronhouders"
+    endpoint_url = f"{settings.BAG_BR_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "bronhouders-tmr"

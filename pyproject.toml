@@ -54,7 +54,7 @@ module-root = "src"
 
 # ==== pytest ====
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "bag_amsterdam_api.settings"
+DJANGO_SETTINGS_MODULE = "tests.settings"
 minversion = "6.0"
 django_find_project = false
 pythonpath = "."
@@ -62,7 +62,7 @@ testpaths = ["tests"]
 addopts = [
     "--nomigrations",
     "--reuse-db",
-    "--ds=bag_amsterdam_api.settings",
+    "--ds=tests.settings",
     "--cov",
     "--cov-fail-under=97"
 ]

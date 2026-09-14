@@ -12,20 +12,17 @@ class VerblijfsobjectView(BaseProxyView):
 
 
 class VerblijfsobjectDetailView(BaseProxyView):
-    base_url = settings.BAG_VO_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "verblijfsobjecten"
+    endpoint_url = f"{settings.BAG_VO_URL}/{{id}}"
+    service_log_id = "verblijfsobjecten-detail"
     query_parameters = qp.VerblijfsobjectenDetailQP
 
 
 class VerblijfsobjectLvcView(BaseProxyView):
-    base_url = settings.BAG_VO_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "verblijfsobjecten"
+    endpoint_url = f"{settings.BAG_VO_URL}/{{id}}/lvc"
+    service_log_id = "verblijfsobjecten-lvc"
     query_parameters = qp.VerblijfsobjectenLvcQP
 
 
 class VerblijfsobjectTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_VO_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "verblijfsobjecten"
+    endpoint_url = f"{settings.BAG_VO_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "verblijfsobjecten-tmr"

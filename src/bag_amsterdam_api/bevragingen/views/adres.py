@@ -19,14 +19,9 @@ class AdresView(BaseProxyView):
 
 
 class AdresDetailView(BaseProxyView):
-    base_url = settings.BAG_AD_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "adressen"
+    endpoint_url = f"{settings.BAG_AD_URL}/{{id}}"
+    service_log_id = "adressen-detail"
     query_parameters = qp.AdressenDetailQP
-
-    # def get(self, request, *args, **kwargs):
-    #     id = kwargs["nummeraanduidingIdentificatie"]
-    #     endpoint_url = f"{settings.BAG_AD_URL}/{id}"
 
 
 class AdresUitgebreidView(BaseProxyView):
@@ -37,6 +32,6 @@ class AdresUitgebreidView(BaseProxyView):
 
 class AdresUitgebreidDetailView(BaseProxyView):
     base_url = settings.BAG_AU_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "adressenuitgebreid"
+    endpoint_url = f"{settings.BAG_AU_URL}/{{id}}"
+    service_log_id = "adressenuitgebreid-detail"
     query_parameters = qp.AdressenUitgebreidDetailQP

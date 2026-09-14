@@ -12,20 +12,17 @@ class PandView(BaseProxyView):
 
 
 class PandDetailView(BaseProxyView):
-    base_url = settings.BAG_PA_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "panden"
+    endpoint_url = f"{settings.BAG_PA_URL}/{{id}}"
+    service_log_id = "panden-detail"
     query_parameters = qp.PandenDetailQP
 
 
 class PandLvcView(BaseProxyView):
-    base_url = settings.BAG_PA_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "panden"
+    endpoint_url = f"{settings.BAG_PA_URL}/{{id}}/lvc"
+    service_log_id = "panden-lvc"
     query_parameters = qp.PandenLvcQP
 
 
 class PandTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_PA_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "panden"
+    endpoint_url = f"{settings.BAG_PA_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "panden-tmr"

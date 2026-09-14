@@ -12,20 +12,17 @@ class NummeraanduidingView(BaseProxyView):
 
 
 class NummeraanduidingDetailView(BaseProxyView):
-    base_url = settings.BAG_NA_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "nummeraanduidingen"
+    endpoint_url = f"{settings.BAG_NA_URL}/{{id}}"
+    service_log_id = "nummeraanduidingen-detail"
     query_parameters = qp.NummeraanduidingDetailQP
 
 
 class NummeraanduidingLvcView(BaseProxyView):
-    base_url = settings.BAG_NA_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "nummeraanduidingen"
+    endpoint_url = f"{settings.BAG_NA_URL}/{{id}}/lvc"
+    service_log_id = "nummeraanduidingen-lvc"
     query_parameters = qp.NummeraanduidingLvcQP
 
 
 class NummeraanduidingTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_NA_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "nummeraanduidingen"
+    endpoint_url = f"{settings.BAG_NA_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "nummeraanduidingen-tmr"

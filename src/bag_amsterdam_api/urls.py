@@ -7,7 +7,8 @@ import bag_amsterdam_api.bevragingen.urls
 from . import views
 
 urlpatterns = [
-    path("bevragingen/", include(bag_amsterdam_api.bevragingen.urls)),
+    path("individuelebevragingen/", include(bag_amsterdam_api.bevragingen.urls)),
+    path("health/", include(bag_amsterdam_api.bevragingen.urls.health_urls)),
     path("pulse", views.pulse),
     path("", views.RootView.as_view()),
 ]

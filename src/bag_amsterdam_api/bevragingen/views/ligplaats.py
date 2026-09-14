@@ -12,20 +12,17 @@ class LigplaatsView(BaseProxyView):
 
 
 class LigplaatsDetailView(BaseProxyView):
-    base_url = settings.BAG_LP_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "ligplaatsen"
+    endpoint_url = f"{settings.BAG_LP_URL}/{{id}}"
+    service_log_id = "ligplaatsen-detail"
     query_parameters = qp.LigplaatsenDetailQP
 
 
 class LigplaatsLvcView(BaseProxyView):
-    base_url = settings.BAG_LP_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "ligplaatsen"
+    endpoint_url = f"{settings.BAG_LP_URL}/{{id}}/lvc"
+    service_log_id = "ligplaatsen-lvc"
     query_parameters = qp.LigplaatsenLvcQP
 
 
 class LigplaatsTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_LP_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "ligplaatsen"
+    endpoint_url = f"{settings.BAG_LP_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "ligplaatsen-tmr"

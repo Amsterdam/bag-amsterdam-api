@@ -20,7 +20,7 @@ class AdresDetails(BaseModel):
 
 class AdresObjectDetailQP(BaseModel):
     # Forbid extra query_parameters send through this endpoint
-    model_config = ConfigDict(extra="forbid")
+    # model_config = ConfigDict(extra="forbid")
     adresseerbaar_object_identificatie: str | None = None
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -29,7 +29,7 @@ class AdresObjectDetailQP(BaseModel):
 
 
 class AdresObjectQP(AdresObjectDetailQP):
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)  # To access raw string value
+    model_config = ConfigDict(use_enum_values=True)  # To access raw string value
     nummeraanduiding_identificatie: str | None = None
     page: int | None = None
     page_size: int | None = None
@@ -42,18 +42,15 @@ class AdresObjectQP(AdresObjectDetailQP):
 
 
 class AdresObjectLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class AdressenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     expand: str | None = None
     inclusief_eindstatus: bool | None = None
 
 
 class AdressenQP(AdresDetails, AdressenDetailQP):
-    model_config = ConfigDict(extra="forbid")
     zoekresultaat_identificatie: str | None = None
     adresseerbaar_object_identificatie: str | None = None
     woonplaats_naam: str | None = None
@@ -66,12 +63,10 @@ class AdressenQP(AdresDetails, AdressenDetailQP):
 
 
 class AdressenUitgebreidDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     inclusief_eindstatus: bool | None = None
 
 
 class AdressenUitgebreidQP(AdresDetails, AdressenUitgebreidDetailQP):
-    model_config = ConfigDict(extra="forbid")
     adresseerbaar_object_identificatie: str | None = None
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
@@ -82,18 +77,15 @@ class AdressenUitgebreidQP(AdresDetails, AdressenUitgebreidDetailQP):
 
 
 class BronhoudersDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
 
 
 class BronhoudersQP(BronhoudersDetailQP):
-    model_config = ConfigDict(extra="forbid")
     object_identificatie: str | None = None
 
 
 class LigplaatsenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -101,7 +93,6 @@ class LigplaatsenDetailQP(BaseModel):
 
 
 class LigplaatsenQP(LigplaatsenDetailQP):
-    model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
@@ -109,12 +100,10 @@ class LigplaatsenQP(LigplaatsenDetailQP):
 
 
 class LigplaatsenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class NummeraanduidingDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -122,7 +111,6 @@ class NummeraanduidingDetailQP(BaseModel):
 
 
 class NummeraanduidingQP(AdresDetails, NummeraanduidingDetailQP):
-    model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
     openbare_ruimte_identificatie: str | None = None
@@ -132,12 +120,10 @@ class NummeraanduidingQP(AdresDetails, NummeraanduidingDetailQP):
 
 
 class NummeraanduidingLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class OpenbareruimtenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -145,7 +131,6 @@ class OpenbareruimtenDetailQP(BaseModel):
 
 
 class OpenbareruimtenQP(OpenbareruimtenDetailQP):
-    model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
     woonplaats_identificatie: str | None = None
@@ -154,19 +139,17 @@ class OpenbareruimtenQP(OpenbareruimtenDetailQP):
 
 
 class OpenbareruimtenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class PandenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
 
 
 class PandenQP(PandenDetailQP):
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True)
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
@@ -179,12 +162,10 @@ class PandenQP(PandenDetailQP):
 
 
 class PandenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class StandplaatsenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -192,7 +173,6 @@ class StandplaatsenDetailQP(BaseModel):
 
 
 class StandplaatsenQP(StandplaatsenDetailQP):
-    model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
@@ -200,12 +180,10 @@ class StandplaatsenQP(StandplaatsenDetailQP):
 
 
 class StandplaatsenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class VerblijfsobjectenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -213,7 +191,7 @@ class VerblijfsobjectenDetailQP(BaseModel):
 
 
 class VerblijfsobjectenQP(VerblijfsobjectenDetailQP):
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True)
     pand_identificatie: str | None = None
     page: int | None = None
     page_size: int | None = None
@@ -224,12 +202,10 @@ class VerblijfsobjectenQP(VerblijfsobjectenDetailQP):
 
 
 class VerblijfsobjectenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class WoonplaatsenDetailQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -237,7 +213,6 @@ class WoonplaatsenDetailQP(BaseModel):
 
 
 class WoonplaatsenQP(WoonplaatsenDetailQP):
-    model_config = ConfigDict(extra="forbid")
     naam: str | None = None
     page: int | None = None
     page_size: int | None = None
@@ -246,13 +221,11 @@ class WoonplaatsenQP(WoonplaatsenDetailQP):
 
 
 class WoonplaatsenLvcQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
     expand: str | None = None
 
 
 class WoonplaatsenTimestampLvQP(BaseModel):
-    model_config = ConfigDict(extra="forbid")
     expand: str | None = None
 
 
