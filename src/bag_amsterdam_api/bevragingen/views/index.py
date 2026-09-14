@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 
 class IndexView(APIView):
-    """Having some response on the /bevragingen/v1/ path fixes the healthcheck."""
+    """Having some response on the /individuelebevragingen/v2/ path fixes the healthcheck."""
 
     def get(self, request):
         return Response(
@@ -18,7 +18,7 @@ class IndexView(APIView):
 
     def _list_urls(self):
         patterns = get_resolver().url_patterns
-        return _extract_patterns(patterns, prefix="/", match="/bevragingen/v1/?*")
+        return _extract_patterns(patterns, prefix="/", match="/individuelebevragingen/v2/?*")
 
 
 def _extract_patterns(patterns, prefix, match):

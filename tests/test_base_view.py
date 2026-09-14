@@ -9,23 +9,7 @@ class TestBaseProxyView:
     This is tested through the concrete implementations though.
     """
 
-    # RESPONSE_BEWONINGEN = {
-    #     "bewoningen": [
-    #         {
-    #             "adresseerbaarObjectIdentificatie": "0518010000832200",
-    #             "periode": {"datumVan": "2020-09-24", "datumTot": "2020-09-25"},
-    #             "bewoners": [{"burgerservicenummer": "999993240"}],
-    #             "mogelijkeBewoners": [{"burgerservicenummer": "999993241"}],
-    #         },
-    #         {
-    #             "adresseerbaarObjectIdentificatie": "0518010000832200",
-    #             "periode": {"datumVan": "2016-03-02", "datumTot": "2020-09-24"},
-    #             "bewoners": [{"burgerservicenummer": "999991371"}],
-    #             "mogelijkeBewoners": [],
-    #         },
-    #     ]
-    # }
-
+    # check dit nog ff???
     RESPONSE_ADRESSEN = {
         "openbareRuimteNaam": "Belgiëlaan",
         "huisnummer": 1,
@@ -45,14 +29,14 @@ class TestBaseProxyView:
             },
             "panden": [
                 {
-                    "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/panden/0484100000045095"
+                    "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/panden/0484100000045095"
                 }
             ],
             "self": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/adressen/0484200002040489"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/adressen/0484200002040489"
             },
             "woonplaats": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2/woonplaatsen/2852"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/woonplaatsen/2852"
             },
         },
         "adresregel5": "Belgiëlaan 1 A3",
@@ -68,18 +52,18 @@ class TestBaseProxyView:
     @pytest.mark.parametrize(
         "url",
         [
-            "/bevragingen/v1/adresseerbareobjecten",
-            "/bevragingen/adressen",
-            "/bevragingen/v1/adressenuitgebreid",
-            "/bevragingen/v1/info",
-            "/bevragingen/v1/bronhouders",
-            "/bevragingen/v1/ligplaatsen",
-            "/bevragingen/v1/nummeraanduidingen",
-            "/bevragingen/v1/openbareruimten",
-            "/bevragingen/v1/panden",
-            "/bevragingen/v1/standplaatsen",
-            "/bevragingen/v1/verblijfsobjecten",
-            "/bevragingen/v1/woonplaatsen",
+            "/individuelebevragingen/v2/info",
+            "/individuelebevragingen/v2/adresseerbareobjecten",
+            "/individuelebevragingen/v2/adressen",
+            "/individuelebevragingen/v2/adressenuitgebreid",
+            "/individuelebevragingen/v2/bronhouders",
+            "/individuelebevragingen/v2/ligplaatsen",
+            "/individuelebevragingen/v2/nummeraanduidingen",
+            "/individuelebevragingen/v2/openbareruimten",
+            "/individuelebevragingen/v2/panden",
+            "/individuelebevragingen/v2/standplaatsen",
+            "/individuelebevragingen/v2/verblijfsobjecten",
+            "/individuelebevragingen/v2/woonplaatsen",
         ],
     )
     def test_no_login(self, api_client, url):
@@ -98,18 +82,18 @@ class TestBaseProxyView:
     @pytest.mark.parametrize(
         "url, view_name",
         [
-            ("/bevragingen/v1/adresseerbareobjecten", "Adresseerbaar Object"),
-            ("/bevragingen/adressen", "Adres"),
-            ("/bevragingen/v1/adressenuitgebreid", "Adres Uitgebreid"),
-            ("/bevragingen/v1/info", "Info"),
-            ("/bevragingen/v1/bronhouders", "Bronhouder"),
-            ("/bevragingen/v1/ligplaatsen", "Ligplaats"),
-            ("/bevragingen/v1/nummeraanduidingen", "Nummeraanduiding"),
-            ("/bevragingen/v1/openbareruimten", "Openbare Ruimte"),
-            ("/bevragingen/v1/panden", "Pand"),
-            ("/bevragingen/v1/standplaatsen", "Standplaats"),
-            ("/bevragingen/v1/verblijfsobjecten", "Verblijfsobject"),
-            ("/bevragingen/v1/woonplaatsen", "Woonplaats"),
+            ("/individuelebevragingen/v2/adresseerbareobjecten", "Adresseerbaar Object"),
+            ("/individuelebevragingen/v2/adressen", "Adres"),
+            ("/individuelebevragingen/v2/adressenuitgebreid", "Adres Uitgebreid"),
+            ("/individuelebevragingen/v2/info", "Info"),
+            ("/individuelebevragingen/v2/bronhouders", "Bronhouder"),
+            ("/individuelebevragingen/v2/ligplaatsen", "Ligplaats"),
+            ("/individuelebevragingen/v2/nummeraanduidingen", "Nummeraanduiding"),
+            ("/individuelebevragingen/v2/openbareruimten", "Openbare Ruimte"),
+            ("/individuelebevragingen/v2/panden", "Pand"),
+            ("/individuelebevragingen/v2/standplaatsen", "Standplaats"),
+            ("/individuelebevragingen/v2/verblijfsobjecten", "Verblijfsobject"),
+            ("/individuelebevragingen/v2/woonplaatsen", "Woonplaats"),
         ],
     )
     def test_options_call(self, api_client, url, view_name):
@@ -146,34 +130,61 @@ class TestBaseProxyView:
             "title": "You do not have permission to perform this action.",
             "detail": (f"A required header is missing: {remove_header.lower()}"),
             "status": 403,
-            "instance": "/bevragingen/adressen",
+            "instance": "/individuelebevragingen/v2/adressen",
         }
 
-    def test_invalid_query_parameters(self, api_client, common_headers):
-        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+    def test_invalid_scope(self, api_client, common_headers):
+        """Prove that access is checked"""
         url = reverse("bag-adressen")
-        token = build_jwt_token(["fp_mdw"])
-        response = api_client.get(
+        token = build_jwt_token(["some_other_scope"])
+        response = api_client.post(
             url,
-            {"unknown": "value"},
             headers={
                 "Authorization": f"Bearer {token}",
                 **common_headers,
             },
         )
-
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": [
-                {
-                    "type": "extra_forbidden",
-                    "loc": ["unknown"],
-                    "msg": "Extra inputs are not permitted",
-                    "input": "value",
-                    "url": "https://errors.pydantic.dev/2.13/v/extra_forbidden",
-                }
-            ]
+        assert response.status_code == 403, response.data
+        assert response.data["code"] == "permissionDenied"
+        assert response.data == {
+            "code": "permissionDenied",
+            "detail": "Required scopes not given in token.",
+            "instance": "/individuelebevragingen/v2/adressen",
+            "status": 403,
+            "title": "You do not have permission to perform this action.",
+            "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
         }
+
+    def test_valid_query_params(self, api_client, requests_mock, common_headers):
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adressen/0484200002040489",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adressen-detail", kwargs={"id": "0484200002040489"})
+        token = build_jwt_token(["fp_mdw"])
+        response = api_client.get(
+            url,
+            {"expand": "false"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+        assert response.status_code == 200, response
+        assert response.json() == self.RESPONSE_ADRESSEN, response.data
+
+    def test_invalid_query_parameter_type(self, api_client, requests_mock, common_headers):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adressen",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["fp_mdw"])
 
         response = api_client.get(
             url,
@@ -197,35 +208,36 @@ class TestBaseProxyView:
             ]
         }
 
-    # def test_valid_query_parameters(self, api_client, common_headers):
-    #     url = reverse("bag-adresobjecten")
-    #     token = build_jwt_token(["fp_mdw"])
-    #     response = api_client.get(
-    #         url,
-    #         {"type": "V"},
-    #         headers={
-    #             "Authorization": f"Bearer {token}",
-    #             **common_headers,
-    #         },
-    #     )
-    #     assert response.status_code == 400
-
-    def test_test_valid_query_params(self, api_client, requests_mock, common_headers):
+    def test_invalid_query_parameter_enum_option(self, api_client, requests_mock, common_headers):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "http://localhost:5010/lv/api/bag/bevragingen/adressen/0484200002040489",
+            "/lvbag/api/individuelebevragingen/v2/woonplaatsen",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
 
-        url = reverse("bag-adressen")  # bag-adressen-detail geeft noreversematch
+        url = reverse("bag-adresobjecten")
         token = build_jwt_token(["fp_mdw"])
+
         response = api_client.get(
-            f"{url}?id=0484200002040489",
-            {"expand": "false"},
+            url,
+            {"type": "A"},
             headers={
                 "Authorization": f"Bearer {token}",
                 **common_headers,
             },
         )
-        assert response.status_code == 200, response
-        assert response.json() == self.RESPONSE_ADRESSEN, response.data
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": [
+                {
+                    "type": "enum",
+                    "loc": ["type"],
+                    "msg": "Input should be 'V', 'S' or 'L'",
+                    "input": "A",
+                    "ctx": {"expected": "'V', 'S' or 'L'"},
+                    "url": "https://errors.pydantic.dev/2.13/v/enum",
+                }
+            ]
+        }

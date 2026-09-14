@@ -13,14 +13,13 @@ class AdresseerbaarObjectView(BaseProxyView):
 
 class AdresseerbaarObjectDetailView(BaseProxyView):
     base_url = settings.BAG_AO_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "adresseerbareobjecten"
+    endpoint_url = f"{settings.BAG_AO_URL}/{{id}}"
+    service_log_id = "adresseerbareobjecten-detail"
     query_parameters = qp.AdresObjectDetailQP
 
 
-# voor nu gekozen voor aparte views in plaats van viewsets, net zoals brp
 class AdresseerbaarObjectLvcView(BaseProxyView):
     base_url = settings.BAG_AO_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "adresseerbareobjecten"
+    endpoint_url = f"{settings.BAG_AO_URL}/{{id}}/lvc"
+    service_log_id = "adresseerbareobjecten-lvc"
     query_parameters = qp.AdresObjectLvcQP

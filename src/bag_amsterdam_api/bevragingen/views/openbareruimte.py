@@ -12,20 +12,17 @@ class OpenbareRuimteView(BaseProxyView):
 
 
 class OpenbareRuimteDetailView(BaseProxyView):
-    base_url = settings.BAG_OR_URL
-    endpoint_url = "{base_url}/{id}"
-    service_log_id = "openbareruimten"
+    endpoint_url = f"{settings.BAG_OR_URL}/{{id}}"
+    service_log_id = "openbareruimten-detail"
     query_parameters = qp.OpenbareruimtenDetailQP
 
 
 class OpenbareRuimteLvcView(BaseProxyView):
-    base_url = settings.BAG_OR_URL
-    endpoint_url = "{base_url}/{id}/lvc"
-    service_log_id = "openbareruimten"
+    endpoint_url = f"{settings.BAG_OR_URL}/{{id}}/lvc"
+    service_log_id = "openbareruimten-lvc"
     query_parameters = qp.OpenbareruimtenLvcQP
 
 
 class OpenbareRuimteTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_OR_URL
-    endpoint_url = "{base_url}/{id}/{version}/{timestamp}"
-    service_log_id = "openbareruimten"
+    endpoint_url = f"{settings.BAG_OR_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "openbareruimten-tmr"

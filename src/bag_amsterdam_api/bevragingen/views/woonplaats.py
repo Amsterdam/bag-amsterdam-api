@@ -14,20 +14,17 @@ class WoonplaatsView(BaseProxyView):
 
 
 class WoonplaatsDetailView(BaseProxyView):
-    base_url = settings.BAG_WP_URL
-    endpoint_url = "{BASE_URL}/{id}"
-    service_log_id = "woonplaatsen"
+    endpoint_url = f"{settings.BAG_WP_URL}/{{id}}"
+    service_log_id = "woonplaatsen-detail"
     query_parameters = qp.WoonplaatsenDetailQP
 
 
 class WoonplaatsLvcView(BaseProxyView):
-    base_url = settings.BAG_WP_URL
-    endpoint_url = "{BASE_URL}/{id}/lvc"
-    service_log_id = "woonplaatsen"
+    endpoint_url = f"{settings.BAG_WP_URL}/{{id}}/lvc"
+    service_log_id = "woonplaatsen-lvc"
     query_parameters = qp.WoonplaatsenLvcQP
 
 
 class WoonplaatsTimeRegistrationView(BaseProxyView):
-    base_url = settings.BAG_WP_URL
-    endpoint_url = "{BASE_URL}/{id}/{version}/{timestamp}"
-    service_log_id = "woonplaatsen"
+    endpoint_url = f"{settings.BAG_WP_URL}/{{id}}/{{version}}/{{timestamp}}"
+    service_log_id = "woonplaatsen-tmr"

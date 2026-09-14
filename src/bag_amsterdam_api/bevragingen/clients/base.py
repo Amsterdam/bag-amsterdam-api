@@ -40,20 +40,24 @@ class BaseBagClient:
         self._host = urlparse(endpoint_url).netloc
         self._session = requests.Session()
 
+        # persist api_key across session
+        self._session.headers.update(
+            {
+                "X-Api-Key": api_key,
+            }
+        )
+
     def __repr__(self):
         return f"<{self.__class__.__qualname__}: {self.endpoint_url}>"
 
     def call(
-        self, hc_request: dict | None = None, params: dict | None = None
+        self, hc_request: dict | None = None, params: dict | None = None, *args, **kwargs
     ) -> requests.Response | APIException:
         """Make an HTTP GET call. kwargs are passed to pool.request."""
         logger.debug("calling %s", self.endpoint_url)
         t0 = time.perf_counter_ns()
+
         try:
-            # persist api_key across session
-            # self._session.headers.update({'X-Api-Key': self._api_key})
-            # self._prepare_request()
-            print(self.endpoint_url)
             # Using urllib directly instead of requests for performance
             response: requests.Response = self._session.request(
                 "GET",
@@ -63,8 +67,6 @@ class BaseBagClient:
                 timeout=60,
                 headers={
                     "Accept": "application/json; charset=utf-8",
-                    # zet ie hem hier ook niet al in de session?
-                    "X-Api-Key": self._api_key,
                     "User-Agent": USER_AGENT,
                 },
             )
@@ -110,8 +112,3 @@ class BaseBagClient:
 
     def _get_http_error(self, response: requests.Response) -> APIException:
         raise NotImplementedError
-
-    # def _prepare_request(self):
-    #     """
-    #     This method can be overwritten to prepare a request per client.
-    #     """
