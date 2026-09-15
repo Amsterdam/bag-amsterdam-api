@@ -9,7 +9,6 @@ class TestBaseProxyView:
     This is tested through the concrete implementations though.
     """
 
-    # check dit nog ff???
     RESPONSE_ADRESSEN = {
         "openbareRuimteNaam": "Belgiëlaan",
         "huisnummer": 1,
@@ -175,6 +174,36 @@ class TestBaseProxyView:
         assert response.status_code == 200, response
         assert response.json() == self.RESPONSE_ADRESSEN, response.data
 
+    def test_invalid_query_params(self, api_client, requests_mock, common_headers):
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adressen/0484200002040489",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adressen-detail", kwargs={"id": "0484200002040489"})
+        token = build_jwt_token(["fp_mdw"])
+        response = api_client.get(
+            url,
+            {"non_existing_qp": "value"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+        assert response.status_code == 400
+        assert response.json() == {
+            "detail": [
+                {
+                    "type": "extra_forbidden",
+                    "loc": ["non_existing_qp"],
+                    "msg": "Extra inputs are not permitted",
+                    "input": "value",
+                    "url": "https://errors.pydantic.dev/2.13/v/extra_forbidden",
+                }
+            ]
+        }
+
     def test_invalid_query_parameter_type(self, api_client, requests_mock, common_headers):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
@@ -208,10 +237,10 @@ class TestBaseProxyView:
             ]
         }
 
-    def test_invalid_query_parameter_enum_option(self, api_client, requests_mock, common_headers):
+    def test_invalid_enum_query_parameter(self, api_client, requests_mock, common_headers):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/woonplaatsen",
+            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
@@ -241,3 +270,160 @@ class TestBaseProxyView:
                 }
             ]
         }
+
+    @pytest.mark.parametrize(
+        "query, status, expected",
+        [
+            (
+                {"oppervlakte[min]": 4000, "oppervlakte[max]": 5000},
+                200,
+                RESPONSE_ADRESSEN,
+            ),
+            (
+                {"oppervlakte[min]": 8000, "oppervlakte[max]": 5000},
+                400,
+                {
+                    "detail": [
+                        {
+                            "type": "value_error",
+                            "loc": [],
+                            "msg": "Value error, Minimum surface (8000) cannot be larger than "
+                            "maximum surface (5000)",
+                            "input": {"oppervlakte[min]": "8000", "oppervlakte[max]": "5000"},
+                            "ctx": {
+                                "error": "Minimum surface (8000) cannot be larger than "
+                                "maximum surface (5000)"
+                            },
+                            "url": "https://errors.pydantic.dev/2.13/v/value_error",
+                        }
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_value_query_parameter(
+        self, api_client, requests_mock, common_headers, query, status, expected
+    ):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adresobjecten")
+        token = build_jwt_token(["fp_mdw"])
+
+        response = api_client.get(
+            url,
+            query,
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+
+        assert response.status_code == status
+        assert response.json() == expected, response.data
+
+    @pytest.mark.parametrize(
+        "query, status, expected",
+        [
+            (
+                {"point": "type,Point,coordinates,196733.51,439931.89"},
+                200,
+                RESPONSE_ADRESSEN,
+            ),
+            (
+                {"point": "type,Point,coordinates,196733.51,439931.89,196733.51"},
+                400,
+                {
+                    "detail": [
+                        {
+                            "type": "value_error",
+                            "loc": ["point"],
+                            "msg": "Value error, Invalid Point query parameter",
+                            "input": "type,Point,coordinates,196733.51,439931.89,196733.51",
+                            "ctx": {"error": "Invalid Point query parameter"},
+                            "url": "https://errors.pydantic.dev/2.13/v/value_error",
+                        }
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_point_query_parameter(
+        self, api_client, requests_mock, common_headers, query, status, expected
+    ):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/ligplaatsen",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-ligplaatsen")
+        token = build_jwt_token(["fp_mdw"])
+
+        response = api_client.get(
+            url,
+            query,
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+
+        assert response.status_code == status
+        assert response.json() == expected, response.data
+
+    @pytest.mark.parametrize(
+        "query, status, expected",
+        [
+            (
+                {"bbox": "196733.51,439931.89,196833.51,440031.89"},
+                200,
+                RESPONSE_ADRESSEN,
+            ),
+            (
+                {"bbox": "196733.51,439931.89,196833.51"},
+                400,
+                {
+                    "detail": [
+                        {
+                            "type": "too_short",
+                            "loc": ["bbox"],
+                            "msg": "List should have at least 4 items after validation, not 3",
+                            "input": ["196733.51", "439931.89", "196833.51"],
+                            "ctx": {"field_type": "List", "min_length": "4", "actual_length": "3"},
+                            "url": "https://errors.pydantic.dev/2.13/v/too_short",
+                        }
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_bbox_query_parameter(
+        self, api_client, requests_mock, common_headers, query, status, expected
+    ):
+        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adresobjecten")
+        token = build_jwt_token(["fp_mdw"])
+
+        response = api_client.get(
+            url,
+            query,
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+
+        assert response.status_code == status
+        assert response.json() == expected, response.data

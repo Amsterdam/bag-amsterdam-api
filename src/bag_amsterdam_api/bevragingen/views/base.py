@@ -173,9 +173,15 @@ class BaseProxyView(ClientMixin, APIView):
 
     def get_query_parameters(self):
         """Validate query parameters per endpoint with pydantic."""
+
         try:
             query_parameters = self.query_parameters.model_validate(self.request.query_params)
         except PydanticValError as e:
             raise ValidationError({"detail": e.errors()}) from e
 
-        return query_parameters.model_dump(exclude_none=True)
+        params = query_parameters.model_dump(exclude_none=True)
+        point = getattr(query_parameters, "point", None)
+        if point is not None:
+            params["point"] = query_parameters.point.to_query_param()
+
+        return params
