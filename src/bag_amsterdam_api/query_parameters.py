@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bag_amsterdam_api.bevragingen import enums
 
@@ -20,7 +20,7 @@ class AdresDetails(BaseModel):
 
 class AdresObjectDetailQP(BaseModel):
     # Forbid extra query_parameters send through this endpoint
-    # model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid")
     adresseerbaar_object_identificatie: str | None = None
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
@@ -29,28 +29,61 @@ class AdresObjectDetailQP(BaseModel):
 
 
 class AdresObjectQP(AdresObjectDetailQP):
-    model_config = ConfigDict(use_enum_values=True)  # To access raw string value
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)  # To access raw string value
     nummeraanduiding_identificatie: str | None = None
     page: int | None = None
     page_size: int | None = None
     bbox: BoundingBox | None = None
     geconstateerd: bool | None = None
-    oppervlakte: Oppervlakte | None = None
+    oppervlakte_min: int | None = Field(
+        default=None,
+        validation_alias="oppervlakte[min]",
+        gte=0,
+    )
+    oppervlakte_max: int | None = Field(
+        default=None,
+        validation_alias="oppervlakte[max]",
+        lte=999999,
+    )
     gebruiksdoelen: list[enums.Gebruiksdoel] | None = None
     type: enums.Type | None = None
     pand_identificaties: list[str] | None = None
 
+    # boundingbox is passed like bbox=196733.51,439931.89,196833.51,440031.89
+    @field_validator("bbox", mode="before")
+    @classmethod
+    def parse_bbox(cls, v):
+        if isinstance(v, str):
+            return [float(x) for x in v.split(",")]
+        return v
+
+    @model_validator(mode="after")
+    def validate_oppervlakte(self):
+        if (
+            self.oppervlakte_min is not None
+            and self.oppervlakte_max is not None
+            and self.oppervlakte_min > self.oppervlakte_max
+        ):
+            raise ValueError(
+                f"Minimum surface ({self.oppervlakte_min}) cannot be larger than "
+                f"maximum surface ({self.oppervlakte_max})"
+            )
+        return self
+
 
 class AdresObjectLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class AdressenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     expand: str | None = None
     inclusief_eindstatus: bool | None = None
 
 
 class AdressenQP(AdresDetails, AdressenDetailQP):
+    model_config = ConfigDict(extra="forbid")
     zoekresultaat_identificatie: str | None = None
     adresseerbaar_object_identificatie: str | None = None
     woonplaats_naam: str | None = None
@@ -63,10 +96,12 @@ class AdressenQP(AdresDetails, AdressenDetailQP):
 
 
 class AdressenUitgebreidDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     inclusief_eindstatus: bool | None = None
 
 
 class AdressenUitgebreidQP(AdresDetails, AdressenUitgebreidDetailQP):
+    model_config = ConfigDict(extra="forbid")
     adresseerbaar_object_identificatie: str | None = None
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
@@ -77,15 +112,18 @@ class AdressenUitgebreidQP(AdresDetails, AdressenUitgebreidDetailQP):
 
 
 class BronhoudersDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
 
 
 class BronhoudersQP(BronhoudersDetailQP):
+    model_config = ConfigDict(extra="forbid")
     object_identificatie: str | None = None
 
 
 class LigplaatsenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -93,6 +131,7 @@ class LigplaatsenDetailQP(BaseModel):
 
 
 class LigplaatsenQP(LigplaatsenDetailQP):
+    model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
@@ -100,10 +139,12 @@ class LigplaatsenQP(LigplaatsenDetailQP):
 
 
 class LigplaatsenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class NummeraanduidingDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -111,6 +152,7 @@ class NummeraanduidingDetailQP(BaseModel):
 
 
 class NummeraanduidingQP(AdresDetails, NummeraanduidingDetailQP):
+    model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
     openbare_ruimte_identificatie: str | None = None
@@ -120,10 +162,12 @@ class NummeraanduidingQP(AdresDetails, NummeraanduidingDetailQP):
 
 
 class NummeraanduidingLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class OpenbareruimtenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     expand: str | None = None
@@ -131,6 +175,7 @@ class OpenbareruimtenDetailQP(BaseModel):
 
 
 class OpenbareruimtenQP(OpenbareruimtenDetailQP):
+    model_config = ConfigDict(extra="forbid")
     woonplaats_naam: str | None = None
     openbare_ruimte_naam: str | None = None
     woonplaats_identificatie: str | None = None
@@ -139,33 +184,42 @@ class OpenbareruimtenQP(OpenbareruimtenDetailQP):
 
 
 class OpenbareruimtenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class PandenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
 
 
 class PandenQP(PandenDetailQP):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
     bbox: BoundingBox | None = None
     status_pand: list[enums.Status] | None = None
     geconstateerd: bool | None = None
-    bouwjaar: Bouwjaar | None = None
+    bouwjaar_min: int | None = Field(default=None, validation_alias="bouwjaar[min]", gte=0)
+    bouwjaar_max: int | None = Field(
+        default=None,
+        validation_alias="bouwjaar[max]",
+        lte=9999,
+    )
     nummeraanduiding_identificatie: str | None = None
     adresseerbaar_object_identificatie: str | None = None
 
 
 class PandenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class StandplaatsenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -173,6 +227,7 @@ class StandplaatsenDetailQP(BaseModel):
 
 
 class StandplaatsenQP(StandplaatsenDetailQP):
+    model_config = ConfigDict(extra="forbid")
     page: int | None = None
     page_size: int | None = None
     point: GeometryPoint | None = None
@@ -180,10 +235,12 @@ class StandplaatsenQP(StandplaatsenDetailQP):
 
 
 class StandplaatsenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class VerblijfsobjectenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -191,21 +248,52 @@ class VerblijfsobjectenDetailQP(BaseModel):
 
 
 class VerblijfsobjectenQP(VerblijfsobjectenDetailQP):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
     pand_identificatie: str | None = None
     page: int | None = None
     page_size: int | None = None
     bbox: BoundingBox | None = None
     geconstateerd: bool | None = None
-    oppervlakte: Oppervlakte | None = None
+    oppervlakte_min: int | None = Field(
+        default=None,
+        validation_alias="oppervlakte[min]",
+        gte=0,
+    )
+    oppervlakte_max: int | None = Field(
+        default=None,
+        validation_alias="oppervlakte[max]",
+        lte=999999,
+    )
     gebruiksdoelen: list[enums.Gebruiksdoel] | None = None
+
+    @field_validator("bbox", mode="before")
+    @classmethod
+    def parse_bbox(cls, v):
+        if isinstance(v, str):
+            return [float(x) for x in v.split(",")]
+        return v
+
+    @model_validator(mode="after")
+    def validate_oppervlakte(self):
+        if (
+            self.oppervlakte_min is not None
+            and self.oppervlakte_max is not None
+            and self.oppervlakte_min > self.oppervlakte_max
+        ):
+            raise ValueError(
+                f"Minimum surface ({self.oppervlakte_min}) cannot be larger than "
+                f"maximum surface ({self.oppervlakte_max})"
+            )
+        return self
 
 
 class VerblijfsobjectenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
 
 
 class WoonplaatsenDetailQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     geldig_op: date | None = None
     beschikbaar_op: datetime | None = None
     huidig: bool | None = None
@@ -213,6 +301,7 @@ class WoonplaatsenDetailQP(BaseModel):
 
 
 class WoonplaatsenQP(WoonplaatsenDetailQP):
+    model_config = ConfigDict(extra="forbid")
     naam: str | None = None
     page: int | None = None
     page_size: int | None = None
@@ -221,42 +310,40 @@ class WoonplaatsenQP(WoonplaatsenDetailQP):
 
 
 class WoonplaatsenLvcQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     gehele_lvc: bool | None = None
     expand: str | None = None
 
 
 class WoonplaatsenTimestampLvQP(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     expand: str | None = None
-
-
-class Oppervlakte(BaseModel):
-    min: Annotated[int, Field(gt=1, lt=1000000)] | None = None
-    max: Annotated[int, Field(gt=1, lt=1000000)] | None = None
-
-    @model_validator(mode="after")
-    def validate(self) -> Oppervlakte:
-        if self.min > self.max:
-            raise ValueError(
-                f"Minimum surface ({self.min}) cannot be larger than maximum surface ({self.max})."
-            )
-        return self
-
-
-class Bouwjaar(BaseModel):
-    min: Annotated[int, Field(gte=0)] | None = None
-    max: Annotated[int, Field(lte=9999)] | None = None
 
 
 class GeometryPoint(BaseModel):
     type: Literal["Point"] = "Point"
-    coordinates: tuple[float, float] = Field()
+    coordinates: tuple[float, float]
 
+    @model_validator(mode="before")
+    @classmethod
+    def parse_query_param(cls, value):
+        if isinstance(value, str):
+            parts = value.split(",")
 
-def validate_bbox(bbox: list[float]) -> list[float]:
-    ll, lr, ul, ur = bbox[:4]
+            if len(parts) != 5:
+                raise ValueError("Invalid Point query parameter")
 
-    # Coordinates are in WSG 84
-    if not (-180 <= ll <= 180) and (-180 <= ul <= 180):
-        raise ValueError("Longitude must be between -180 and 180.")
-    if not (-90 <= lr <= 90) and (-90 <= ur <= 90):
-        raise ValueError("Latitude must be between -90 and 90.")
+            if parts[:3] != ["type", "Point", "coordinates"]:
+                raise ValueError("Invalid Point query parameter")
+
+            return {
+                "type": parts[1],
+                "coordinates": (float(parts[3]), float(parts[4])),
+            }
+
+        return value
+
+    def to_query_param(self) -> str:
+        # point is passed like point=type,Point,coordinates,196733.51,439931.8
+        x, y = self.coordinates
+        return f"type,{self.type},coordinates,{x},{y}"
