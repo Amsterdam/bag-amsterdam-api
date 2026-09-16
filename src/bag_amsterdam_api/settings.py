@@ -235,12 +235,7 @@ if DEBUG:
     )
 
 DATAPUNT_AUTHZ = {
-<<<<<<< HEAD
     "TRUSTED_JWKS": get_trusted_jwks(),
-=======
-    # To verify JWT tokens, the PUB_JWKS needs to be set.
-    "JWKS": os.getenv("PUB_JWKS"),
->>>>>>> d870223 (deleted references to rvig and replaced oauth with api_key)
     # "ALWAYS_OK": True if DEBUG else False,
     "ALWAYS_OK": False,
     "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
