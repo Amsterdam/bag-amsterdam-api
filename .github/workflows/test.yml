@@ -27,7 +27,7 @@ jobs:
       run: docker compose -f "docker-compose.yml" up -d --build
 
     - name: Run tests
-      run: docker compose exec -T web pytest -v --ds=bag_amsterdam_api.settings --show-capture=no
+      run: docker compose exec -T web pytest -v --show-capture=no
 
     - name: Stop containers
       if: always()
