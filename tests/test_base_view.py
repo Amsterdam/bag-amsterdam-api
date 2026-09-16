@@ -171,11 +171,24 @@ class TestBaseProxyView:
             "instance": "/individuelebevragingen/v2/adressen",
         }
 
+    def test_index_view(self, api_client, common_headers):
+        """Prove that index view works"""
+        url = reverse("bag-index")
+        token = build_jwt_token(["fp_mdw"])
+        response = api_client.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                **common_headers,
+            },
+        )
+        assert response.status_code == 200
+
     def test_invalid_scope(self, api_client, common_headers):
         """Prove that access is checked"""
         url = reverse("bag-adressen")
         token = build_jwt_token(["some_other_scope"])
-        response = api_client.post(
+        response = api_client.get(
             url,
             headers={
                 "Authorization": f"Bearer {token}",
@@ -276,7 +289,35 @@ class TestBaseProxyView:
             ]
         }
 
-    def test_invalid_enum_query_parameter(self, api_client, requests_mock, common_headers):
+    @pytest.mark.parametrize(
+        "query, status, expected",
+        [
+            (
+                {"type": "V"},
+                200,
+                RESPONSE_ADRESOBJECT,
+            ),
+            (
+                {"type": "A"},
+                400,
+                {
+                    "detail": [
+                        {
+                            "type": "enum",
+                            "loc": ["type"],
+                            "msg": "Input should be 'V', 'S' or 'L'",
+                            "input": "A",
+                            "ctx": {"expected": "'V', 'S' or 'L'"},
+                            "url": "https://errors.pydantic.dev/2.13/v/enum",
+                        }
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_enum_query_parameter(
+        self, api_client, requests_mock, common_headers, query, status, expected
+    ):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
@@ -289,26 +330,15 @@ class TestBaseProxyView:
 
         response = api_client.get(
             url,
-            {"type": "A"},
+            query,
             headers={
                 "Authorization": f"Bearer {token}",
                 **common_headers,
             },
         )
 
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": [
-                {
-                    "type": "enum",
-                    "loc": ["type"],
-                    "msg": "Input should be 'V', 'S' or 'L'",
-                    "input": "A",
-                    "ctx": {"expected": "'V', 'S' or 'L'"},
-                    "url": "https://errors.pydantic.dev/2.13/v/enum",
-                }
-            ]
-        }
+        assert response.status_code == status, response
+        assert response.json() == expected
 
     @pytest.mark.parametrize(
         "query, status, expected",
