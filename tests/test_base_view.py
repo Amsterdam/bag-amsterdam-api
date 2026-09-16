@@ -48,6 +48,45 @@ class TestBaseProxyView:
         "postcode": "2391PH",
     }
 
+    RESPONSE_ADRESOBJECT = {
+        "type": "Verblijfsobject",
+        "identificatie": "0226010000038820",
+        "domein": "NL.IMBAG.Verblijfsobject",
+        "geometrie": {"punt": {"type": "Point", "coordinates": [196733.427, 439931.991, 0.0]}},
+        "gebruiksdoelen": ["overige gebruiksfunctie"],
+        "oppervlakte": 205,
+        "status": "Verblijfsobject in gebruik",
+        "geconstateerd": "N",
+        "documentdatum": "2019-11-22",
+        "documentnummer": "19SZ2048",
+        "voorkomen": {
+            "tijdstipRegistratie": "2019-12-06T11:51:31",
+            "versie": 1,
+            "beginGeldigheid": "2019-11-22",
+            "tijdstipRegistratieLV": "2019-12-06T12:00:26.425",
+        },
+        "maaktDeelUitVan": ["0226100000008856"],
+        "heeftAlsHoofdAdres": "0226200000038923",
+    }
+
+    RESPONSE_LIGPLAATSEN = {
+        "type": "Ligplaats",
+        "identificatie": "0797020000056894",
+        "domein": "NL.IMBAG.Ligplaats",
+        "status": "Plaats aangewezen",
+        "geometrie": {"punt": {"type": "Point", "coordinates": [196733.51, 439931.89]}},
+        "geconstateerd": "N",
+        "documentdatum": "2011-12-30",
+        "documentnummer": "AVGEL30122011-07",
+        "voorkomen": {
+            "tijdstipRegistratie": "2013-03-18T14:26:45",
+            "versie": 1,
+            "beginGeldigheid": "2011-12-30",
+            "tijdstipRegistratieLV": "2013-03-18T14:35:39.303",
+        },
+        "heeftAlsHoofdAdres": "0797200000825818",
+    }
+
     @pytest.mark.parametrize(
         "url",
         [
@@ -241,7 +280,7 @@ class TestBaseProxyView:
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
-            json=self.RESPONSE_ADRESSEN,
+            json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )
 
@@ -277,7 +316,7 @@ class TestBaseProxyView:
             (
                 {"oppervlakte[min]": 4000, "oppervlakte[max]": 5000},
                 200,
-                RESPONSE_ADRESSEN,
+                RESPONSE_ADRESOBJECT,
             ),
             (
                 {"oppervlakte[min]": 8000, "oppervlakte[max]": 5000},
@@ -307,7 +346,7 @@ class TestBaseProxyView:
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
-            json=self.RESPONSE_ADRESSEN,
+            json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )
 
@@ -323,8 +362,8 @@ class TestBaseProxyView:
             },
         )
 
-        assert response.status_code == status
-        assert response.json() == expected, response.data
+        assert response.status_code == status, response
+        assert response.json() == expected
 
     @pytest.mark.parametrize(
         "query, status, expected",
@@ -332,7 +371,7 @@ class TestBaseProxyView:
             (
                 {"point": "type,Point,coordinates,196733.51,439931.89"},
                 200,
-                RESPONSE_ADRESSEN,
+                RESPONSE_LIGPLAATSEN,
             ),
             (
                 {"point": "type,Point,coordinates,196733.51,439931.89,196733.51"},
@@ -358,7 +397,7 @@ class TestBaseProxyView:
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/ligplaatsen",
-            json=self.RESPONSE_ADRESSEN,
+            json=self.RESPONSE_LIGPLAATSEN,
             headers={"content-type": "application/json"},
         )
 
@@ -374,8 +413,11 @@ class TestBaseProxyView:
             },
         )
 
-        assert response.status_code == status
-        assert response.json() == expected, response.data
+        print(type(response.json()))
+        print(type(expected))
+
+        assert response.status_code == status, response
+        assert response.json() == expected
 
     @pytest.mark.parametrize(
         "query, status, expected",
@@ -383,7 +425,7 @@ class TestBaseProxyView:
             (
                 {"bbox": "196733.51,439931.89,196833.51,440031.89"},
                 200,
-                RESPONSE_ADRESSEN,
+                RESPONSE_ADRESOBJECT,
             ),
             (
                 {"bbox": "196733.51,439931.89,196833.51"},
@@ -409,7 +451,7 @@ class TestBaseProxyView:
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
-            json=self.RESPONSE_ADRESSEN,
+            json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )
 
@@ -425,5 +467,5 @@ class TestBaseProxyView:
             },
         )
 
-        assert response.status_code == status
-        assert response.json() == expected, response.data
+        assert response.status_code == status, response
+        assert response.json() == expected
