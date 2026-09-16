@@ -1,8 +1,8 @@
+import os
 from pathlib import Path
 from typing import Any
 
 import environ
-from authorization_django.utils import get_trusted_jwks
 from pythonjsonlogger import json
 
 env = environ.Env()
@@ -234,7 +234,8 @@ if DEBUG:
     )
 
 DATAPUNT_AUTHZ = {
-    "TRUSTED_JWKS": get_trusted_jwks(),
+    # To verify JWT tokens, the PUB_JWKS needs to be set.
+    "JWKS": os.getenv("PUB_JWKS"),
     # "ALWAYS_OK": True if DEBUG else False,
     "ALWAYS_OK": False,
     "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
