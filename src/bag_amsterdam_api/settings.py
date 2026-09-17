@@ -235,8 +235,13 @@ if DEBUG:
     )
 
 DATAPUNT_AUTHZ = {
+<<<<<<< HEAD
     "TRUSTED_JWKS": get_trusted_jwks(),
+=======
+    # To verify JWT tokens, the PUB_JWKS needs to be set.
+>>>>>>> 0956ab5 (update auth_django to newest version)
     # "ALWAYS_OK": True if DEBUG else False,
+    "TRUSTED_JWKS": get_trusted_jwks(),
     "ALWAYS_OK": False,
     "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
 }
