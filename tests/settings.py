@@ -1,7 +1,9 @@
+from json import loads
+
 import environ
 
 from src.bag_amsterdam_api.settings import *  # noqa: F403
-from src.bag_amsterdam_api.settings import LOGGING
+from src.bag_amsterdam_api.settings import LOGGING, Path
 
 env = environ.Env()
 
@@ -18,6 +20,15 @@ CACHES = {
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 
+# Load public/private test key pair.
+# This was obtained in the authz project with: jwkgen -create -alg ES256
+jwks_key = Path(__file__).parent.parent.joinpath("src", "jwks_test.json").read_text()
+
+DATAPUNT_AUTHZ = {
+    "TRUSTED_JWKS": [{"jwks": loads(jwks_key), "claims": {"iss": "iss"}}],
+    "ALWAYS_OK": False,
+    "MIN_INTERVAL_KEYSET_UPDATE": 30 * 60,  # 30 minutes
+}
 
 # Remove propagate=False so caplog can read those messages.
 LOGGING = {
