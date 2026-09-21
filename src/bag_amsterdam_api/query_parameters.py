@@ -45,7 +45,7 @@ class AdresObjectQP(AdresObjectDetailQP):
         validation_alias="oppervlakte[max]",
         lte=999999,
     )
-    gebruiksdoelen: list[enums.Gebruiksdoel] | None = None
+    gebruiksdoelen: enums.Gebruiksdoel | None = None
     type: enums.Type | None = None
     pand_identificaties: list[str] | None = None
 
@@ -201,7 +201,7 @@ class PandenQP(PandenDetailQP):
     page_size: int | None = None
     point: GeometryPoint | None = None
     bbox: BoundingBox | None = None
-    status_pand: list[enums.Status] | None = None
+    status_pand: enums.Status | None = None
     geconstateerd: bool | None = None
     bouwjaar_min: int | None = Field(default=None, validation_alias="bouwjaar[min]", gte=0)
     bouwjaar_max: int | None = Field(
@@ -264,7 +264,7 @@ class VerblijfsobjectenQP(VerblijfsobjectenDetailQP):
         validation_alias="oppervlakte[max]",
         lte=999999,
     )
-    gebruiksdoelen: list[enums.Gebruiksdoel] | None = None
+    gebruiksdoelen: enums.Gebruiksdoel | None = None
 
     @field_validator("bbox", mode="before")
     @classmethod

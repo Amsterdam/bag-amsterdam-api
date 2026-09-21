@@ -4,6 +4,7 @@ from django.test import RequestFactory
 
 from bag_amsterdam_api.views import (
     ProblemJsonException,
+    RootView,
     bad_request,
     exception_handler,
     not_found,
@@ -15,6 +16,15 @@ def test_pulse(api_client):
     response = api_client.get("/pulse")
     assert response.status_code == 200
     assert response.data == {"status": "OK"}
+
+
+def test_root_view():
+    request = RequestFactory().get("/")
+
+    response = RootView.as_view()(request)
+
+    assert response.status_code == 200
+    assert json.loads(response.content) == {"status": "online"}
 
 
 def test_bad_request_handler():
