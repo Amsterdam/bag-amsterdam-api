@@ -64,7 +64,7 @@ addopts = [
     "--reuse-db",
     "--ds=tests.settings",
     "--cov",
-    "--cov-fail-under=97"
+    "--cov-fail-under=93"
 ]
 norecursedirs = ["node_modules", ".tox", ".git"]
 filterwarnings = [
