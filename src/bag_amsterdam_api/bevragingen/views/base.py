@@ -5,10 +5,10 @@ from copy import deepcopy
 import orjson
 import requests
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.timezone import now
+from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValError
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.request import Request
@@ -81,7 +81,7 @@ class BaseProxyView(ClientMixin, APIView):
     #: The based scopes needed for all requests
     needed_scopes: set = {"fp_mdw"}
     #: The query parameters needed for filtering
-    query_parameters: str = None
+    query_parameters: type[BaseModel] | None = None
 
     def initial(self, request: Request, *args, **kwargs):
         """DRF-level initialization for all request types."""
@@ -103,7 +103,6 @@ class BaseProxyView(ClientMixin, APIView):
         # Token is validated, extract token scopes that are set by the middleware
         self.user_scopes = set(request.get_token_scopes)
         self.upn = request.get_token_claims.get("email", request.get_token_subject)
-        self.appid = request.get_token_claims.get("appid")
 
         try:
             # request.data is only available in initial(), not in setup()
@@ -116,8 +115,6 @@ class BaseProxyView(ClientMixin, APIView):
                 "taskDescription": self.request.headers["X-Task-Description"],
                 "granted": sorted(self.user_scopes),
             }
-            if self.appid:
-                self.default_log_fields["appid"] = self.appid
         except KeyError as e:
             raise PermissionDenied(
                 f"A required header is missing: {e.args[0]}", code="missingHeaders"
@@ -128,17 +125,15 @@ class BaseProxyView(ClientMixin, APIView):
         DRF checks these in the initial() method, and will block view access
         if these permissions are not satisfied.
         """
-        if not self.needed_scopes:
-            raise ImproperlyConfigured("needed_scopes is not set")
-
         return super().get_permissions() + [
             permissions.IsUserScope(self.needed_scopes),
+            permissions.HasRequiredHeaders(),
         ]
 
     def get(self, request: Request, *args, **kwargs):
         self.client.endpoint_url = self.get_endpoint_url()
         hc_request = request.data.copy()
-        params = self.get_query_parameters()
+        params = self.get_query_parameters(request)
 
         # Proxy to kadaster BAG API
         try:
@@ -171,11 +166,11 @@ class BaseProxyView(ClientMixin, APIView):
         except KeyError:
             return self.endpoint_url
 
-    def get_query_parameters(self):
+    def get_query_parameters(self, request):
         """Validate query parameters per endpoint with pydantic."""
 
         try:
-            query_parameters = self.query_parameters.model_validate(self.request.query_params)
+            query_parameters = self.query_parameters.model_validate(request.query_params)
         except PydanticValError as e:
             raise ValidationError({"detail": e.errors()}) from e
 
