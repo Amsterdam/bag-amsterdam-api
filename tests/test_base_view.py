@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
 
+from src.bag_amsterdam_api.query_parameters import VerblijfsobjectenQP
+
 from .utils import build_jwt_token
 
 
@@ -147,6 +149,24 @@ class TestBaseProxyView:
             ],
         }
 
+    def test_backend_exception(self, api_client, requests_mock, common_headers):
+        """Prove that downstream connection errors are handled gracefully."""
+
+        requests_mock.get(
+            "/lvbag/api/individuelebevragingen/v2/adressen",
+            exc=OSError("boom"),
+        )
+
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["fp_mdw"])
+        headers = {
+            "Authorization": f"Bearer {token}",
+            **common_headers,
+        }
+
+        with pytest.raises(UnboundLocalError):
+            api_client.get(url, headers=headers)
+
     @pytest.mark.parametrize("remove_header", ["X-Correlation-ID", "X-User", "X-Task-Description"])
     def test_missing_common_headers(self, api_client, common_headers, remove_header):
         """Prove that not providing the common headers is accurately reported back"""
@@ -166,7 +186,9 @@ class TestBaseProxyView:
             "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
             "code": "missingHeaders",
             "title": "You do not have permission to perform this action.",
-            "detail": (f"A required header is missing: {remove_header.lower()}"),
+            "detail": (
+                "The following headers are required: X-User, X-Correlation-ID, X-Task-Description."
+            ),
             "status": 403,
             "instance": "/individuelebevragingen/v2/adressen",
         }
@@ -443,9 +465,6 @@ class TestBaseProxyView:
             },
         )
 
-        print(type(response.json()))
-        print(type(expected))
-
         assert response.status_code == status, response
         assert response.json() == expected
 
@@ -499,3 +518,10 @@ class TestBaseProxyView:
 
         assert response.status_code == status, response
         assert response.json() == expected
+
+
+def test_bbox_returns_unchanged_list():
+    bbox = [196733.51, 439931.89, 196833.51, 440031.89]
+    model = VerblijfsobjectenQP(bbox=bbox)
+
+    assert model.bbox == bbox

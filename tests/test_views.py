@@ -1,6 +1,7 @@
 import json
 
 from django.test import RequestFactory
+from rest_framework.exceptions import APIException
 
 from bag_amsterdam_api.views import (
     ProblemJsonException,
@@ -61,6 +62,20 @@ def test_server_error_handler():
 
     assert response.status_code == 500
     assert data["title"] == "Server Error (500)"
+
+
+def test_server_error_handler_api_exception():
+    request = RequestFactory().get("/")
+
+    try:
+        raise APIException("Server error")
+    except APIException:
+        response = server_error(request)
+
+    data = json.loads(response.content)
+
+    assert response.status_code == 500
+    assert data["detail"] == "Server error"
 
 
 def test_problem_json_exception_with_invalid_params():

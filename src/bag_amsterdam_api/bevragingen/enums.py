@@ -1,22 +1,7 @@
 from enum import StrEnum
 
 
-class StrChoicesEnum(StrEnum):
-    """Implemented choices method for easy conversion to tuples used in Django Models."""
-
-    @classmethod
-    def choices(cls, upper: bool = False):
-        if upper:
-            return tuple(
-                (cls[item].value, item.upper().replace("_", " ")) for item in list(cls.__members__)
-            )
-        return tuple(
-            (cls[item].value, item.lower().replace("_", " ").capitalize())
-            for item in list(cls.__members__)
-        )
-
-
-class Gebruiksdoel(StrChoicesEnum):
+class Gebruiksdoel(StrEnum):
     WOONFUNCTIE = "WOON"
     BIJEENKOMSTFUNCTIE = "B"
     CELFUNCTIE = "C"
@@ -30,13 +15,13 @@ class Gebruiksdoel(StrChoicesEnum):
     OVERIGE_GEBRUIKSFUNCTIE = "O"
 
 
-class Type(StrChoicesEnum):
+class Type(StrEnum):
     VERBLIJFSOBJECT = "V"
     STANDPLAATS = "S"
     LIGPLAATS = "L"
 
 
-class Status(StrChoicesEnum):
+class Status(StrEnum):
     BOUWVERGUNNING_VERLEEND = "BV"
     NIET_GEREALISEERD_PAND = "NG"
     BOUW_GESTART = "BG"
