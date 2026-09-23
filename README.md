@@ -1,6 +1,6 @@
 # Bag Amsterdam Api
 
-This is a proxy service to connect to the RvIG BAG API. It filters requests and enforces token-based authorization.
+This is a proxy service to connect to the kadaster BAG API. It filters requests and enforces token-based authorization.
 
 # Installation
 

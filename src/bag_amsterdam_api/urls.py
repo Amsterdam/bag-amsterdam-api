@@ -2,10 +2,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
 
-from .views import pulse
+import bag_amsterdam_api.bevragingen.urls
+
+from . import views
 
 urlpatterns = [
-    path("pulse", pulse),
+    path("individuelebevragingen/", include(bag_amsterdam_api.bevragingen.urls)),
+    path("health/", include(bag_amsterdam_api.bevragingen.urls.health_urls)),
+    path("pulse", views.pulse),
+    path("", views.RootView.as_view()),
 ]
 
 if settings.DEBUG:
