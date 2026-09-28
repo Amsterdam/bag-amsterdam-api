@@ -76,8 +76,6 @@ def exception_handler(exc, context):
             "code": str(exc.code),
             "instance": request.path if request else None,
         }
-        if exc.invalid_params is not None:
-            normalized_fields["invalidParams"] = exc.invalid_params
 
         # This merge strategy puts the normal fields first:
         response.data.update(normalized_fields)
@@ -97,7 +95,7 @@ def exception_handler(exc, context):
     else:
         # Unknown exception format, pass native JSON what DRF has generated. Make sure
         # neither application/hal+json nor application/problem+json is returned here.
-        response.content_type = "application/json; charset=utf-8"
+        response.content_type = "application/hal+json; charset=utf-8"
 
     return response
 

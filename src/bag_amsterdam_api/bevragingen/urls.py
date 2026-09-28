@@ -3,7 +3,10 @@ from django.views.generic import RedirectView
 
 from bag_amsterdam_api.bevragingen import views
 
-address_object_patterns = [
+urlpatterns = [
+    path("", RedirectView.as_view(pattern_name="bag-index")),
+    path("v2", views.IndexView.as_view(), name="bag-index"),
+    # Adresseerbare objecten
     path(
         "v2/adresseerbareobjecten",
         views.AdresseerbaarObjectView.as_view(),
@@ -19,9 +22,7 @@ address_object_patterns = [
         views.AdresseerbaarObjectLvcView.as_view(),
         name="bag-adresobjecten-lvc",
     ),
-]
-
-address_patterns = [
+    # Adressen
     path("v2/adressen", views.AdresView.as_view(), name="bag-adressen"),
     path(
         "v2/adressen/<str:id>",
@@ -38,9 +39,7 @@ address_patterns = [
         views.AdresUitgebreidDetailView.as_view(),
         name="bag-adressenuitgebreid-detail",
     ),
-]
-
-bronhouders_patterns = [
+    # Bronhouders
     path("v2/bronhouders", views.BronhouderView.as_view(), name="bag-bronhouders"),
     path(
         "v2/bronhouders/<str:id>",
@@ -52,9 +51,7 @@ bronhouders_patterns = [
         views.BronhouderTimeRegistrationView.as_view(),
         name="bag-bronhouders-tsr",
     ),
-]
-
-ligplaatsen_patterns = [
+    # Ligplaatsen
     path("v2/ligplaatsen", views.LigplaatsView.as_view(), name="bag-ligplaatsen"),
     path(
         "v2/ligplaatsen/<str:id>",
@@ -71,9 +68,7 @@ ligplaatsen_patterns = [
         views.LigplaatsTimeRegistrationView.as_view(),
         name="bag-ligplaatsen-tsr",
     ),
-]
-
-nummeraanduiding_patterns = [
+    # Nummeraanduidingen
     path(
         "v2/nummeraanduidingen",
         views.NummeraanduidingView.as_view(),
@@ -94,9 +89,7 @@ nummeraanduiding_patterns = [
         views.NummeraanduidingTimeRegistrationView.as_view(),
         name="bag-nummeraanduidingen-tsr",
     ),
-]
-
-openbareruimten_patterns = [
+    # Openbare Ruimten
     path(
         "v2/openbareruimten",
         views.OpenbareRuimteView.as_view(),
@@ -117,9 +110,7 @@ openbareruimten_patterns = [
         views.OpenbareRuimteTimeRegistrationView.as_view(),
         name="bag-openbareruimten-tsr",
     ),
-]
-
-panden_patterns = [
+    # Panden
     path("v2/panden", views.PandView.as_view(), name="bag-panden"),
     path("v2/panden/<str:id>", views.PandDetailView.as_view(), name="bag-panden-detail"),
     path("v2/panden/<str:id>/lvc", views.PandLvcView.as_view(), name="bag-panden-lvc"),
@@ -128,9 +119,7 @@ panden_patterns = [
         views.PandTimeRegistrationView.as_view(),
         name="bag-panden-tsr",
     ),
-]
-
-standplaatsen_patterns = [
+    # Standplaatsen
     path(
         "v2/standplaatsen",
         views.StandplaatsView.as_view(),
@@ -151,9 +140,7 @@ standplaatsen_patterns = [
         views.StandplaatsTimeRegistrationView.as_view(),
         name="bag-standplaatsen-tsr",
     ),
-]
-
-verblijfsobject_patterns = [
+    # Verblijfsobjecten
     path(
         "v2/verblijfsobjecten",
         views.VerblijfsobjectView.as_view(),
@@ -174,9 +161,7 @@ verblijfsobject_patterns = [
         views.VerblijfsobjectTimeRegistrationView.as_view(),
         name="bag-verblijfsobjecten-tsr",
     ),
-]
-
-woonplaats_patterns = [
+    # Woonplaatsen
     path("v2/woonplaatsen", views.WoonplaatsView.as_view(), name="bag-woonplaatsen"),
     path(
         "v2/woonplaatsen/<str:id>",
@@ -195,23 +180,7 @@ woonplaats_patterns = [
     ),
 ]
 
-urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="bag-index")),
-    path("v2", views.IndexView.as_view(), name="bag-index"),
-    path("v2/info", views.InfoView.as_view(), name="bag-info"),
-    *address_object_patterns,
-    *address_patterns,
-    *bronhouders_patterns,
-    *ligplaatsen_patterns,
-    *nummeraanduiding_patterns,
-    *openbareruimten_patterns,
-    *panden_patterns,
-    *standplaatsen_patterns,
-    *verblijfsobject_patterns,
-    *woonplaats_patterns,
-]
-
 health_urls = [
     # Healthcheck
-    path("adressen", views.AdresHealthView.as_view(), name="bag-adressen-health"),
+    path("v2/info", views.InfoHealthView.as_view(), name="bag-info-health"),
 ]

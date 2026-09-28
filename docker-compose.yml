@@ -10,7 +10,8 @@ services:
       #DATABASE_URL: "${DATABASE_URL:-postgresql://postgres:insecure@database/dataservices}"
       CORS_ALLOW_ALL_ORIGINS: "${CORS_ALLOW_ALL_ORIGINS:-true}"
       DJANGO_LOG_LEVEL: "${DJANGO_LOG_LEVEL:-INFO}"
-      HAAL_CENTRAAL_BAG_URL: "http://localhost:5011/haalcentraal/api/bag/"
+      BAG_URL: "${BAG_URL}"
+      BAG_API_KEY: "${BAG_API_KEY}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       AZURE_APPI_CONNECTION_STRING: "${AZURE_APPI_CONNECTION_STRING:-}"
       # Generated using: jq -c < src/jwks_test.json

@@ -1,6 +1,7 @@
 import pytest
 from django.urls import reverse
 
+from src.bag_amsterdam_api.bevragingen.views.base import BaseProxyView
 from src.bag_amsterdam_api.query_parameters import VerblijfsobjectenQP
 
 from .utils import build_jwt_token
@@ -20,24 +21,22 @@ class TestBaseProxyView:
         "woonplaatsIdentificatie": "2852",
         "_links": {
             "adresseerbaarObject": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/verblijfsobjecten/0484010002033603"
+                "href": "http://localhost:8098/individuelebevragingen/verblijfsobjecten/0484010002033603"
             },
             "nummeraanduiding": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/nummeraanduidingen/0484200002040489"
+                "href": "http://localhost:8098/individuelebevragingen/nummeraanduidingen/0484200002040489"
             },
             "openbareRuimte": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/openbareruimten/1672300000000110"
+                "href": "http://localhost:8098/individuelebevragingen/openbareruimten/1672300000000110"
             },
             "panden": [
-                {
-                    "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/panden/0484100000045095"
-                }
+                {"href": "http://localhost:8098/individuelebevragingen/panden/0484100000045095"}
             ],
             "self": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/adressen/0484200002040489"
+                "href": "http://localhost:8098/individuelebevragingen/adressen/0484200002040489"
             },
             "woonplaats": {
-                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/woonplaatsen/2852"
+                "href": "http://localhost:8098/individuelebevragingen/woonplaatsen/2852"
             },
         },
         "adresregel5": "Belgiëlaan 1 A3",
@@ -92,7 +91,6 @@ class TestBaseProxyView:
     @pytest.mark.parametrize(
         "url",
         [
-            "/individuelebevragingen/v2/info",
             "/individuelebevragingen/v2/adresseerbareobjecten",
             "/individuelebevragingen/v2/adressen",
             "/individuelebevragingen/v2/adressenuitgebreid",
@@ -125,7 +123,6 @@ class TestBaseProxyView:
             ("/individuelebevragingen/v2/adresseerbareobjecten", "Adresseerbaar Object"),
             ("/individuelebevragingen/v2/adressen", "Adres"),
             ("/individuelebevragingen/v2/adressenuitgebreid", "Adres Uitgebreid"),
-            ("/individuelebevragingen/v2/info", "Info"),
             ("/individuelebevragingen/v2/bronhouders", "Bronhouder"),
             ("/individuelebevragingen/v2/ligplaatsen", "Ligplaats"),
             ("/individuelebevragingen/v2/nummeraanduidingen", "Nummeraanduiding"),
@@ -149,7 +146,7 @@ class TestBaseProxyView:
             ],
         }
 
-    def test_backend_exception(self, api_client, requests_mock, common_headers):
+    def test_backend_exception(self, api_client, requests_mock):
         """Prove that downstream connection errors are handled gracefully."""
 
         requests_mock.get(
@@ -158,55 +155,29 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-adressen")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
         headers = {
             "Authorization": f"Bearer {token}",
-            **common_headers,
+            "Accept": "application/json",
         }
 
         with pytest.raises(UnboundLocalError):
             api_client.get(url, headers=headers)
 
-    @pytest.mark.parametrize("remove_header", ["X-Correlation-ID", "X-User", "X-Task-Description"])
-    def test_missing_common_headers(self, api_client, common_headers, remove_header):
-        """Prove that not providing the common headers is accurately reported back"""
-        url = reverse("bag-adressen")
-        token = build_jwt_token(["fp_mdw"])
-        headers = {
-            "Authorization": f"Bearer {token}",
-            **common_headers,
-        }
-        del headers[remove_header]
-        response = api_client.get(
-            url,
-            headers=headers,
-        )
-        assert response.status_code == 403
-        assert response.json() == {
-            "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
-            "code": "missingHeaders",
-            "title": "You do not have permission to perform this action.",
-            "detail": (
-                "The following headers are required: X-User, X-Correlation-ID, X-Task-Description."
-            ),
-            "status": 403,
-            "instance": "/individuelebevragingen/v2/adressen",
-        }
-
-    def test_index_view(self, api_client, common_headers):
+    def test_index_view(self, api_client):
         """Prove that index view works"""
         url = reverse("bag-index")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
         response = api_client.get(
             url,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
         assert response.status_code == 200
 
-    def test_invalid_scope(self, api_client, common_headers):
+    def test_invalid_scope(self, api_client):
         """Prove that access is checked"""
         url = reverse("bag-adressen")
         token = build_jwt_token(["some_other_scope"])
@@ -214,7 +185,7 @@ class TestBaseProxyView:
             url,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
         assert response.status_code == 403, response.data
@@ -228,7 +199,23 @@ class TestBaseProxyView:
             "type": "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
         }
 
-    def test_valid_query_params(self, api_client, requests_mock, common_headers):
+    def test_rewrite_links_rewrites_matching_href(self):
+        view = BaseProxyView()
+
+        data = {"href": "https://example.com/api/items/123"}
+
+        rewrites = [
+            (
+                "https://example.com",
+                "https://proxy_example.com",
+            )
+        ]
+
+        view._rewrite_links(data, rewrites)
+
+        assert data["href"] == "https://proxy_example.com/api/items/123"
+
+    def test_valid_query_params(self, api_client, requests_mock):
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adressen/0484200002040489",
             json=self.RESPONSE_ADRESSEN,
@@ -236,33 +223,33 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-adressen-detail", kwargs={"id": "0484200002040489"})
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
         response = api_client.get(
             url,
             {"expand": "false"},
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
         assert response.status_code == 200, response
         assert response.json() == self.RESPONSE_ADRESSEN, response.data
 
-    def test_invalid_query_params(self, api_client, requests_mock, common_headers):
+    def test_invalid_query_params(self, api_client, requests_mock):
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adressen/0484200002040489",
+            "/api/individuelebevragingen/v2/adressen/0484200002040489",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
 
         url = reverse("bag-adressen-detail", kwargs={"id": "0484200002040489"})
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
         response = api_client.get(
             url,
             {"non_existing_qp": "value"},
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
         assert response.status_code == 400
@@ -278,23 +265,23 @@ class TestBaseProxyView:
             ]
         }
 
-    def test_invalid_query_parameter_type(self, api_client, requests_mock, common_headers):
+    def test_invalid_query_parameter_type(self, api_client, requests_mock):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adressen",
+            "/api/individuelebevragingen/v2/adressen",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
 
         url = reverse("bag-adressen")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
 
         response = api_client.get(
             url,
             {"page_size": "not_an_int"},
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
 
@@ -337,9 +324,7 @@ class TestBaseProxyView:
             ),
         ],
     )
-    def test_enum_query_parameter(
-        self, api_client, requests_mock, common_headers, query, status, expected
-    ):
+    def test_enum_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
@@ -348,14 +333,14 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-adresobjecten")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
 
         response = api_client.get(
             url,
             query,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
 
@@ -392,9 +377,7 @@ class TestBaseProxyView:
             ),
         ],
     )
-    def test_value_query_parameter(
-        self, api_client, requests_mock, common_headers, query, status, expected
-    ):
+    def test_value_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
@@ -403,14 +386,14 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-adresobjecten")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
 
         response = api_client.get(
             url,
             query,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
 
@@ -443,9 +426,7 @@ class TestBaseProxyView:
             ),
         ],
     )
-    def test_point_query_parameter(
-        self, api_client, requests_mock, common_headers, query, status, expected
-    ):
+    def test_point_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/ligplaatsen",
@@ -454,14 +435,14 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-ligplaatsen")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
 
         response = api_client.get(
             url,
             query,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
 
@@ -494,9 +475,7 @@ class TestBaseProxyView:
             ),
         ],
     )
-    def test_bbox_query_parameter(
-        self, api_client, requests_mock, common_headers, query, status, expected
-    ):
+    def test_bbox_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
             "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
@@ -505,14 +484,14 @@ class TestBaseProxyView:
         )
 
         url = reverse("bag-adresobjecten")
-        token = build_jwt_token(["fp_mdw"])
+        token = build_jwt_token(["FP/MDW"])
 
         response = api_client.get(
             url,
             query,
             headers={
                 "Authorization": f"Bearer {token}",
-                **common_headers,
+                "Accept": "application/json",
             },
         )
 

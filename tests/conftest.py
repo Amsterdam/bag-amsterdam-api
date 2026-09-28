@@ -40,13 +40,3 @@ def api_client() -> APIClient:
     api_client = APIClient()
     api_client.default_format = "json"  # instead of multipart
     return api_client
-
-
-@pytest.fixture()
-def common_headers(request) -> dict:
-    return {
-        "X-Correlation-ID": request.node.name,
-        "X-User": "foobar",
-        "X-Task-Description": "unittest",
-        "Accept": "application/json",
-    }

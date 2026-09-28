@@ -45,13 +45,11 @@ class ProblemJsonException(exceptions.APIException):
         detail,
         code,
         status=status.HTTP_400_BAD_REQUEST,
-        invalid_params=None,
     ):
         super().__init__(detail, code)
         self.code = code or self.default_code
         self.title = title
         self.status_code = status
-        self.invalid_params = invalid_params
 
 
 class RemoteAPIException(ProblemJsonException):
@@ -64,6 +62,5 @@ class RemoteAPIException(ProblemJsonException):
             detail=remote_json.get("detail"),
             code=remote_json.get("code", default.default_code),
             status=status,
-            invalid_params=remote_json.get("invalidParams"),
         )
         self.remote_json = remote_json

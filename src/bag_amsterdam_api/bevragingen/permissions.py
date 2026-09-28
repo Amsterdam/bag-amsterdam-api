@@ -29,22 +29,3 @@ class IsUserScope(BasePermission):
 
         # This calls into 'authorization_django middleware'
         return request.is_authorized_for(*self.needed_scopes)
-
-    def has_object_permission(self, request, view, obj):
-        return self.has_permission(request, view)
-
-
-class HasRequiredHeaders(BasePermission):
-    """Permission check to check whether expected headers are present."""
-
-    required_headers = ("X-User", "X-Correlation-ID", "X-Task-Description")
-    message = f"The following headers are required: {', '.join(required_headers)}."
-    code = "missingHeaders"  # this helps both clients and unittest to see the difference.
-
-    def has_permission(self, request, view):
-        if request.method == "OPTIONS":
-            return True
-        return all(request.headers.get(header) for header in self.required_headers)
-
-    def has_object_permission(self, request, view, obj):
-        return self.has_permission(request, view)
