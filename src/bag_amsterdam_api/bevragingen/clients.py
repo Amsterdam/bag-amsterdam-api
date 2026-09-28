@@ -1,33 +1,31 @@
-"""Client for kadaster BAG API."""
-
 import logging
+import time
 from urllib.parse import urlparse
 
 import orjson
 import requests
-
-# from more_ds.network.url import URL
+from requests import ConnectionError, Timeout
 from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound
 
 from bag_amsterdam_api.bevragingen.exceptions import (
     BadGateway,
+    GatewayTimeout,
     RemoteAPIException,
+    ServiceUnavailable,
 )
-
-from .base import BaseBagClient
 
 logger = logging.getLogger(__name__)
 
 USER_AGENT = "BAG-Amsterdam-API/1.0"
 
 
-class BagClient(BaseBagClient):
-    """kadaster BAG API client.
-
-    When a reference to the client is kept globally,
-    its HTTP connection pool can be reused between threads.
+class BagClient:
     """
+    BAG Client to consume BAG API's
+    """
+
+    # endpoint_url: URL
 
     def __init__(
         self,
@@ -37,7 +35,7 @@ class BagClient(BaseBagClient):
     ):
         """Initialize the client configuration.
 
-        :param endpoint_url: Full URL of the kadaster BAG service.
+        :param endpoint_url: Full URL of the BAG service.
         :param api_key: The API key to use
         """
         if not endpoint_url:
@@ -47,9 +45,76 @@ class BagClient(BaseBagClient):
         self._host = urlparse(endpoint_url).netloc
         self._session = requests.Session()
 
+        # persist api_key across session
+        self._session.headers.update(
+            {
+                "X-Api-Key": api_key,
+            }
+        )
+
     @property
     def host(self) -> str:
         return self._host
+
+    def call(
+        self, request: dict | None = None, params: dict | None = None, *args, **kwargs
+    ) -> requests.Response | APIException:
+        """Make an HTTP GET call. kwargs are passed to pool.request."""
+        logger.debug("calling %s", self.endpoint_url)
+        t0 = time.perf_counter_ns()
+
+        try:
+            # Using urllib directly instead of requests for performance
+            response: requests.Response = self._session.request(
+                "GET",
+                self.endpoint_url,
+                json=request,
+                params=params,
+                timeout=60,
+                headers={
+                    "Accept": "application/hal+json; charset=utf-8",
+                    "User-Agent": USER_AGENT,
+                },
+            )
+        except (TimeoutError, Timeout) as e:
+            # Socket timeout
+            logger.error(
+                "Proxy call to %s failed, timeout from remote server: %s",
+                self._host,
+                e,
+            )
+            raise GatewayTimeout() from e
+        except (OSError, ConnectionError) as e:
+            # Socket connect / SSL error.
+            logger.error(
+                "Proxy call to %s failed, error when connecting to server: %s",
+                self._host,
+                e,
+            )
+            raise ServiceUnavailable(str(e)) from e
+
+        # Log response and timing results
+        level = logging.ERROR if response.status_code >= 400 else logging.INFO
+        logger.log(
+            level,
+            "Proxy call to %s, status %s: %s (%s), took: %.3fs",
+            self.endpoint_url,
+            response.status_code,
+            response.reason,
+            response.headers.get("content-type"),
+            (time.perf_counter_ns() - t0) * 1e-9,
+        )
+
+        if 200 <= response.status_code < 300:
+            return response
+
+        # We got an error.
+        # Raise exception in nicer format, but chain with the original one
+        # so the "response" object is still accessible via __cause__.response.
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise self._get_http_error(response) from e
 
     def _get_http_error(self, response: requests.Response) -> APIException:
         # Translate the remote HTTP error to the proper response.
@@ -62,7 +127,9 @@ class BagClient(BaseBagClient):
         content_type = response.headers.get("content-type", "")
         remote_json = (
             orjson.loads(response.content)
-            if any(ct in content_type for ct in ["application/json", "application/problem+json"])
+            if any(
+                ct in content_type for ct in ["application/hal+json", "application/problem+json"]
+            )
             else None
         )
         detail_message = response.text if not content_type.startswith("text/html") else None

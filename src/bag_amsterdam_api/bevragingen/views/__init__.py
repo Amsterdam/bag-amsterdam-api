@@ -3,7 +3,6 @@
 # Split in a package for easier maintenance
 from .adres import (
     AdresDetailView,
-    AdresHealthView,
     AdresUitgebreidDetailView,
     AdresUitgebreidView,
     AdresView,
@@ -19,7 +18,7 @@ from .bronhouder import (
     BronhouderView,
 )
 from .index import IndexView
-from .info import InfoView
+from .info import InfoHealthView
 from .ligplaats import (
     LigplaatsDetailView,
     LigplaatsLvcView,
@@ -61,11 +60,10 @@ from .woonplaats import (
 # voor nu gekozen voor aparte views in plaats van viewsets, net zoals brp
 __all__ = (
     "IndexView",
-    "InfoView",
+    "InfoHealthView",
     "AdresseerbaarObjectView",
     "AdresseerbaarObjectDetailView",
     "AdresseerbaarObjectLvcView",
-    "AdresHealthView",
     "AdresView",
     "AdresDetailView",
     "AdresUitgebreidView",

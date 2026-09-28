@@ -4,11 +4,9 @@ from bag_amsterdam_api import query_parameters as qp
 
 from .base import BaseProxyView
 
-BASE_URL = settings.BAG_WP_URL
-
 
 class WoonplaatsView(BaseProxyView):
-    endpoint_url = BASE_URL
+    endpoint_url = f"{settings.BAG_WP_URL}"
     service_log_id = "woonplaatsen"
     query_parameters = qp.WoonplaatsenQP
 

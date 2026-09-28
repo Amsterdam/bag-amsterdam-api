@@ -5,8 +5,7 @@ import pytest
 from requests.exceptions import Timeout
 from rest_framework.exceptions import NotFound
 
-from bag_amsterdam_api.bevragingen.clients.base import BaseBagClient
-from bag_amsterdam_api.bevragingen.clients.kadaster import BagClient
+from bag_amsterdam_api.bevragingen.clients import BagClient
 from bag_amsterdam_api.bevragingen.exceptions import (
     BadGateway,
     GatewayTimeout,
@@ -15,7 +14,7 @@ from bag_amsterdam_api.bevragingen.exceptions import (
 )
 
 
-def make_response(status_code, body, content_type="application/json"):
+def make_response(status_code, body, content_type="application/hal+json"):
     response = Mock()
     response.status_code = status_code
     response.headers = {"content-type": content_type}
@@ -40,7 +39,7 @@ def test_get_non_json_response():
 
 def test_missing_endpoint_url():
     with pytest.raises(ValueError, match="Missing BAG endpoint URL"):
-        BaseBagClient("", api_key="key")
+        BagClient("", api_key="key")
 
 
 @pytest.mark.parametrize(
@@ -69,7 +68,7 @@ def test_http_404_error_translation():
 
 
 def test_api_key_added_to_session_headers():
-    client = BaseBagClient(
+    client = BagClient(
         endpoint_url="https://example.com/api",
         api_key="secret",
     )
@@ -78,7 +77,7 @@ def test_api_key_added_to_session_headers():
 
 
 def test_timeout(requests_mock):
-    client = BaseBagClient(endpoint_url="https://example.com/adressen", api_key="key")
+    client = BagClient(endpoint_url="https://example.com/adressen", api_key="key")
     requests_mock.get(
         "https://example.com/adressen",
         exc=Timeout,
@@ -91,7 +90,7 @@ def test_timeout(requests_mock):
 
 
 def test_connection(requests_mock):
-    client = BaseBagClient(endpoint_url="https://example.com/adressen", api_key="key")
+    client = BagClient(endpoint_url="https://example.com/adressen", api_key="key")
     requests_mock.get(
         "https://example.com/adressen",
         exc=ConnectionError,

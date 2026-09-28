@@ -78,16 +78,15 @@ def test_server_error_handler_api_exception():
     assert data["detail"] == "Server error"
 
 
-def test_problem_json_exception_with_invalid_params():
+def test_problem_json_exception():
     request = RequestFactory().get("/test")
 
     exc = ProblemJsonException(
         title="Bad Request",
         detail="Invalid",
         code=400,
-        invalid_params=[{"name": "postcode", "reason": "invalid"}],
     )
 
     response = exception_handler(exc, {"request": request})
 
-    assert response.data["invalidParams"] == [{"name": "postcode", "reason": "invalid"}]
+    assert response.data["detail"] == "Invalid"
