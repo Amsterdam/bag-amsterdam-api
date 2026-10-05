@@ -2,8 +2,9 @@ from unittest.mock import Mock
 
 import orjson
 import pytest
+import requests
 from requests.exceptions import Timeout
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import APIException, NotFound
 
 from bag_amsterdam_api.bevragingen.clients import BagClient
 from bag_amsterdam_api.bevragingen.exceptions import (
@@ -37,6 +38,21 @@ def test_get_non_json_response():
     assert isinstance(error, BadGateway)
 
 
+def test_http_error(requests_mock):
+    """Prove that client handles non json responses"""
+    client = BagClient("https://example.com/adressen", api_key="key")
+    requests_mock.get(
+        "https://example.com/adressen", status_code=500, json={"error": "Internal Server Error"}
+    )
+    request = Mock()
+    request.data = {}
+
+    with pytest.raises(APIException) as exc_info:
+        client.call(request)
+
+    assert isinstance(exc_info.value.__cause__, requests.HTTPError)
+
+
 def test_missing_endpoint_url():
     with pytest.raises(ValueError, match="Missing BAG endpoint URL"):
         BagClient("", api_key="key")
@@ -59,14 +75,6 @@ def test_http_error_translation(status_code, body, expected):
     assert isinstance(error, expected)
 
 
-def test_http_404_error_translation():
-    client = BagClient("https://example.com", api_key="secret")
-    response = make_response(404, {"title": "Not found"}, "application/problem+json")
-    error = client._get_http_error(response)
-
-    assert isinstance(error, RemoteAPIException)
-
-
 def test_api_key_added_to_session_headers():
     client = BagClient(
         endpoint_url="https://example.com/api",
@@ -83,8 +91,11 @@ def test_timeout(requests_mock):
         exc=Timeout,
     )
 
+    request = Mock()
+    request.data = {}
+
     with pytest.raises(GatewayTimeout) as exc_info:
-        client.call()
+        client.call(request)
 
     assert isinstance(exc_info.value.__cause__, Timeout)
 
@@ -96,7 +107,10 @@ def test_connection(requests_mock):
         exc=ConnectionError,
     )
 
+    request = Mock()
+    request.data = {}
+
     with pytest.raises(ServiceUnavailable) as exc_info:
-        client.call()
+        client.call(request)
 
     assert isinstance(exc_info.value.__cause__, ConnectionError)

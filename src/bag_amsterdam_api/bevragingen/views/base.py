@@ -10,11 +10,11 @@ from django.http import HttpResponse
 from django.utils.timezone import now
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValError
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from bag_amsterdam_api.bevragingen import authentication, permissions
+from bag_amsterdam_api.bevragingen import authentication, exceptions, permissions
 from bag_amsterdam_api.bevragingen.clients import BagClient
 from bag_amsterdam_api.settings import URL
 
@@ -45,33 +45,13 @@ class BaseProxyView(APIView):
         """DRF-level initialization for all request types."""
         self.client = BagClient(
             endpoint_url=URL,
-            api_key=settings.BAG_API_KEY,
+            api_key=settings.KADASTER_BAG_API_KEY,
         )
         self.start_time = time.perf_counter_ns()
         self.start_date = now()
 
         # Perform authorization, permission checks and throttles.
         super().initial(request, *args, **kwargs)
-
-        # Options requests do not have a token in the header, so we'll return early
-        if request.method == "OPTIONS":
-            return
-
-        # Return for healthcheck
-        if not self.needed_scopes:
-            return
-
-        # Token is validated, extract token scopes that are set by the middleware
-        self.user_scopes = set(request.get_token_scopes)
-        self.upn = request.get_token_claims.get("email", request.get_token_subject)
-
-        # request.data is only available in initial(), not in setup()
-        self.default_log_fields = {
-            "service": self.service_log_id,
-            "queryType": request.data.get("type", None),
-            "upn": self.upn,
-            "granted": sorted(self.user_scopes),
-        }
 
     def get_permissions(self):
         """Collect the DRF permission checks.
@@ -84,20 +64,19 @@ class BaseProxyView(APIView):
 
     def get(self, request: Request, *args, **kwargs):
         self.client.endpoint_url = self.get_endpoint_url()
-        copied_request = request.data.copy()
         params = self.get_query_parameters(request)
 
         # Proxy to kadaster BAG API
         try:
-            downstream_response = self.client.call(copied_request, params)
+            downstream_response = self.client.call(request, params)
         except (APIException, OSError) as e:
-            # Even when the request failed, still log that we did grant access.
             response = (
                 e.__cause__.response.json()
                 if isinstance(e.__cause__, requests.RequestException)
                 and e.__cause__.response is not None
                 else None
             )
+            raise
 
         # Rewrite the response to pagination still works.
         # (currently in in-place)
@@ -128,7 +107,7 @@ class BaseProxyView(APIView):
         try:
             query_parameters = self.query_parameters.model_validate(request.query_params)
         except PydanticValError as e:
-            raise ValidationError({"detail": e.errors()}) from e
+            raise exceptions.ParamsValidationError(self._convert_pydantic_error(e.errors())) from e
 
         params = query_parameters.model_dump(exclude_none=True)
         point = getattr(query_parameters, "point", None)
@@ -177,3 +156,26 @@ class BaseProxyView(APIView):
 
             for value in data.values():
                 self._rewrite_links(value, rewrites)
+
+    def _convert_pydantic_error(self, pydantic_errors: list) -> dict:
+        invalid_params = []
+
+        for error in pydantic_errors:
+            invalid_params.append(
+                {
+                    "type": error.get("url"),
+                    "name": ".".join(str(part) for part in error.get("loc", ())),
+                    "code": error.get("type"),
+                    "reason": error.get("msg"),
+                }
+            )
+
+        return {
+            "status": 400,
+            "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 "
+            "400 Bad Request",
+            "detail": pydantic_errors[0]["msg"],
+            "instance": self.endpoint_url,
+            "code": "paramsValidation",
+            "invalid-params": invalid_params,
+        }

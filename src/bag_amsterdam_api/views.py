@@ -8,7 +8,7 @@ from rest_framework.exceptions import APIException, ErrorDetail
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
-from bag_amsterdam_api.bevragingen.exceptions import ProblemJsonException
+from bag_amsterdam_api.bevragingen.exceptions import ParamsValidationError, ProblemJsonException
 
 STATUS_TO_URI = {
     status.HTTP_400_BAD_REQUEST: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
@@ -56,6 +56,12 @@ def exception_handler(exc, context):
     """
     request = context.get("request")
     response = drf_exception_handler(exc, context)
+
+    # Handle pydantic validation errors
+    if isinstance(exc, ParamsValidationError):
+        response = Response(status=exc.payload["status"])
+        response.data = exc.payload
+
     if response is None:
         return None
 

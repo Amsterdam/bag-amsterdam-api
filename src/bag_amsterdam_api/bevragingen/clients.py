@@ -68,7 +68,7 @@ class BagClient:
             response: requests.Response = self._session.request(
                 "GET",
                 self.endpoint_url,
-                json=request,
+                json=request.data,
                 params=params,
                 timeout=60,
                 headers={

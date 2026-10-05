@@ -249,29 +249,26 @@ DATAPUNT_AUTHZ = {
 # -- Local app settings
 
 if _USE_SECRET_STORE or CLOUD_ENV.startswith("azure"):
-    BAG_API_KEY = Path("/mnt/secrets-store/bag-proxy-key").read_text()
+    KADASTER_BAG_API_KEY = Path("/mnt/secrets-store/bag-api-key").read_text()
 else:
-    BAG_API_KEY = env.str("BAG_API_KEY", "")
+    KADASTER_BAG_API_KEY = env.str("KADASTER_BAG_API_KEY", "")
 
 BAG_URL = env.str(
     "BAG_URL",
     default="",
 )
-BAG_INFO_URL = env.str(
-    "BAG_INFO_URL",
-    default=f"{BAG_URL}/info",
-)
-BAG_AO_URL = env.str("BAG_AO_URL", default=f"{BAG_URL}/adresseerbareobjecten")
-BAG_AD_URL = env.str("BAG_AD_URL", default=f"{BAG_URL}/adressen")
-BAG_AU_URL = env.str("BAG_AU_URL", default=f"{BAG_URL}/adressenuitgebreid")
-BAG_BR_URL = env.str("BAG_BR_URL", default=f"{BAG_URL}/bronhouders")
-BAG_LP_URL = env.str("BAG_LP_URL", default=f"{BAG_URL}/ligplaatsen")
-BAG_NA_URL = env.str("BAG_NA_URL", default=f"{BAG_URL}/nummeraanduidingen")
-BAG_OR_URL = env.str("BAG_OR_URL", default=f"{BAG_URL}/openbareruimten")
-BAG_PA_URL = env.str("BAG_PA_URL", default=f"{BAG_URL}/panden")
-BAG_SP_URL = env.str("BAG_SP_URL", default=f"{BAG_URL}/standplaatsen")
-BAG_VO_URL = env.str("BAG_VO_URL", default=f"{BAG_URL}/verblijfsobjecten")
-BAG_WP_URL = env.str("BAG_WP_URL", default=f"{BAG_URL}/woonplaatsen")
+BAG_INFO_URL = f"{BAG_URL}/info"
+BAG_AO_URL = f"{BAG_URL}/adresseerbareobjecten"
+BAG_AD_URL = f"{BAG_URL}/adressen"
+BAG_AU_URL = f"{BAG_URL}/adressenuitgebreid"
+BAG_BR_URL = f"{BAG_URL}/bronhouders"
+BAG_LP_URL = f"{BAG_URL}/ligplaatsen"
+BAG_NA_URL = f"{BAG_URL}/nummeraanduidingen"
+BAG_OR_URL = f"{BAG_URL}/openbareruimten"
+BAG_PA_URL = f"{BAG_URL}/panden"
+BAG_SP_URL = f"{BAG_URL}/standplaatsen"
+BAG_VO_URL = f"{BAG_URL}/verblijfsobjecten"
+BAG_WP_URL = f"{BAG_URL}/woonplaatsen"
 
 # -- Local app settings
 BACKEND_API = env.str("BACKEND_API", "mock")

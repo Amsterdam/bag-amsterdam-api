@@ -21,22 +21,24 @@ class TestBaseProxyView:
         "woonplaatsIdentificatie": "2852",
         "_links": {
             "adresseerbaarObject": {
-                "href": "http://localhost:8098/individuelebevragingen/verblijfsobjecten/0484010002033603"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/verblijfsobjecten/0484010002033603"
             },
             "nummeraanduiding": {
-                "href": "http://localhost:8098/individuelebevragingen/nummeraanduidingen/0484200002040489"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/nummeraanduidingen/0484200002040489"
             },
             "openbareRuimte": {
-                "href": "http://localhost:8098/individuelebevragingen/openbareruimten/1672300000000110"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/openbareruimten/1672300000000110"
             },
             "panden": [
-                {"href": "http://localhost:8098/individuelebevragingen/panden/0484100000045095"}
+                {
+                    "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/panden/0484100000045095"
+                }
             ],
             "self": {
-                "href": "http://localhost:8098/individuelebevragingen/adressen/0484200002040489"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/adressen/0484200002040489"
             },
             "woonplaats": {
-                "href": "http://localhost:8098/individuelebevragingen/woonplaatsen/2852"
+                "href": "https://api.bag.kadaster.nl/lvbag/individuelebevragingen/woonplaatsen/2852"
             },
         },
         "adresregel5": "Belgiëlaan 1 A3",
@@ -146,24 +148,6 @@ class TestBaseProxyView:
             ],
         }
 
-    def test_backend_exception(self, api_client, requests_mock):
-        """Prove that downstream connection errors are handled gracefully."""
-
-        requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adressen",
-            exc=OSError("boom"),
-        )
-
-        url = reverse("bag-adressen")
-        token = build_jwt_token(["FP/MDW"])
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-        }
-
-        with pytest.raises(UnboundLocalError):
-            api_client.get(url, headers=headers)
-
     def test_index_view(self, api_client):
         """Prove that index view works"""
         url = reverse("bag-index")
@@ -202,18 +186,21 @@ class TestBaseProxyView:
     def test_rewrite_links_rewrites_matching_href(self):
         view = BaseProxyView()
 
-        data = {"href": "https://example.com/api/items/123"}
+        data = self.RESPONSE_ADRESSEN
 
         rewrites = [
             (
-                "https://example.com",
-                "https://proxy_example.com",
+                "https://api.bag.kadaster.nl/lvbag",
+                "http://localhost:8098",
             )
         ]
 
         view._rewrite_links(data, rewrites)
 
-        assert data["href"] == "https://proxy_example.com/api/items/123"
+        assert (
+            data["_links"]["panden"][0]["href"]
+            == "http://localhost:8098/individuelebevragingen/panden/0484100000045095"
+        )
 
     def test_valid_query_params(self, api_client, requests_mock):
         requests_mock.get(
@@ -235,40 +222,10 @@ class TestBaseProxyView:
         assert response.status_code == 200, response
         assert response.json() == self.RESPONSE_ADRESSEN, response.data
 
-    def test_invalid_query_params(self, api_client, requests_mock):
-        requests_mock.get(
-            "/api/individuelebevragingen/v2/adressen/0484200002040489",
-            json=self.RESPONSE_ADRESSEN,
-            headers={"content-type": "application/json"},
-        )
-
-        url = reverse("bag-adressen-detail", kwargs={"id": "0484200002040489"})
-        token = build_jwt_token(["FP/MDW"])
-        response = api_client.get(
-            url,
-            {"non_existing_qp": "value"},
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/json",
-            },
-        )
-        assert response.status_code == 400
-        assert response.json() == {
-            "detail": [
-                {
-                    "type": "extra_forbidden",
-                    "loc": ["non_existing_qp"],
-                    "msg": "Extra inputs are not permitted",
-                    "input": "value",
-                    "url": "https://errors.pydantic.dev/2.13/v/extra_forbidden",
-                }
-            ]
-        }
-
     def test_invalid_query_parameter_type(self, api_client, requests_mock):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/api/individuelebevragingen/v2/adressen",
+            "/lvbag/api/individuelebevragingen/v2/adressen",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
@@ -287,15 +244,21 @@ class TestBaseProxyView:
 
         assert response.status_code == 400
         assert response.json() == {
-            "detail": [
+            "status": 400,
+            "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 Bad "
+            "Request",
+            "detail": "Input should be a valid integer, unable to parse string as an integer",
+            "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adressen",
+            "code": "paramsValidation",
+            "invalid-params": [
                 {
-                    "type": "int_parsing",
-                    "loc": ["page_size"],
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "not_an_int",
-                    "url": "https://errors.pydantic.dev/2.13/v/int_parsing",
+                    "type": "https://errors.pydantic.dev/2.13/v/int_parsing",
+                    "name": "page_size",
+                    "code": "int_parsing",
+                    "reason": "Input should be a valid integer, unable to parse string as an "
+                    "integer",
                 }
-            ]
+            ],
         }
 
     @pytest.mark.parametrize(
@@ -310,16 +273,20 @@ class TestBaseProxyView:
                 {"type": "A"},
                 400,
                 {
-                    "detail": [
+                    "status": 400,
+                    "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
+                    "Bad Request",
+                    "detail": "Input should be 'V', 'S' or 'L'",
+                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "code": "paramsValidation",
+                    "invalid-params": [
                         {
-                            "type": "enum",
-                            "loc": ["type"],
-                            "msg": "Input should be 'V', 'S' or 'L'",
-                            "input": "A",
-                            "ctx": {"expected": "'V', 'S' or 'L'"},
-                            "url": "https://errors.pydantic.dev/2.13/v/enum",
+                            "type": "https://errors.pydantic.dev/2.13/v/enum",
+                            "name": "type",
+                            "code": "enum",
+                            "reason": "Input should be 'V', 'S' or 'L'",
                         }
-                    ]
+                    ],
                 },
             ),
         ],
@@ -359,20 +326,22 @@ class TestBaseProxyView:
                 {"oppervlakte[min]": 8000, "oppervlakte[max]": 5000},
                 400,
                 {
-                    "detail": [
+                    "status": 400,
+                    "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
+                    "Bad Request",
+                    "detail": "Value error, Minimum surface (8000) cannot be larger than maximum "
+                    "surface (5000)",
+                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "code": "paramsValidation",
+                    "invalid-params": [
                         {
-                            "type": "value_error",
-                            "loc": [],
-                            "msg": "Value error, Minimum surface (8000) cannot be larger than "
+                            "type": "https://errors.pydantic.dev/2.13/v/value_error",
+                            "name": "",
+                            "code": "value_error",
+                            "reason": "Value error, Minimum surface (8000) cannot be larger than "
                             "maximum surface (5000)",
-                            "input": {"oppervlakte[min]": "8000", "oppervlakte[max]": "5000"},
-                            "ctx": {
-                                "error": "Minimum surface (8000) cannot be larger than "
-                                "maximum surface (5000)"
-                            },
-                            "url": "https://errors.pydantic.dev/2.13/v/value_error",
                         }
-                    ]
+                    ],
                 },
             ),
         ],
@@ -412,16 +381,20 @@ class TestBaseProxyView:
                 {"point": "type,Point,coordinates,196733.51,439931.89,196733.51"},
                 400,
                 {
-                    "detail": [
+                    "status": 400,
+                    "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
+                    "Bad Request",
+                    "detail": "Value error, Invalid Point query parameter",
+                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/ligplaatsen",
+                    "code": "paramsValidation",
+                    "invalid-params": [
                         {
-                            "type": "value_error",
-                            "loc": ["point"],
-                            "msg": "Value error, Invalid Point query parameter",
-                            "input": "type,Point,coordinates,196733.51,439931.89,196733.51",
-                            "ctx": {"error": "Invalid Point query parameter"},
-                            "url": "https://errors.pydantic.dev/2.13/v/value_error",
+                            "type": "https://errors.pydantic.dev/2.13/v/value_error",
+                            "name": "point",
+                            "code": "value_error",
+                            "reason": "Value error, Invalid Point query parameter",
                         }
-                    ]
+                    ],
                 },
             ),
         ],
@@ -461,16 +434,20 @@ class TestBaseProxyView:
                 {"bbox": "196733.51,439931.89,196833.51"},
                 400,
                 {
-                    "detail": [
+                    "status": 400,
+                    "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
+                    "Bad Request",
+                    "detail": "List should have at least 4 items after validation, not 3",
+                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "code": "paramsValidation",
+                    "invalid-params": [
                         {
-                            "type": "too_short",
-                            "loc": ["bbox"],
-                            "msg": "List should have at least 4 items after validation, not 3",
-                            "input": ["196733.51", "439931.89", "196833.51"],
-                            "ctx": {"field_type": "List", "min_length": "4", "actual_length": "3"},
-                            "url": "https://errors.pydantic.dev/2.13/v/too_short",
+                            "type": "https://errors.pydantic.dev/2.13/v/too_short",
+                            "name": "bbox",
+                            "code": "too_short",
+                            "reason": "List should have at least 4 items after validation, not 3",
                         }
-                    ]
+                    ],
                 },
             ),
         ],

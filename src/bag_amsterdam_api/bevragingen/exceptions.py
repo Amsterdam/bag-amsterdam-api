@@ -52,6 +52,16 @@ class ProblemJsonException(exceptions.APIException):
         self.status_code = status
 
 
+class ParamsValidationError(Exception):
+    """API exception that dictates exactly what the
+    pydantic validation response looks like.
+    """
+
+    def __init__(self, payload):
+        self.payload = payload
+        super().__init__(str(payload))
+
+
 class RemoteAPIException(ProblemJsonException):
     """Indicate that a call to a remote endpoint failed."""
 
