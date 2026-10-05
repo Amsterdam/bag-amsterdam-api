@@ -59,7 +59,7 @@ WHITENOISE_MANIFEST_STRICT = False
 
 # use different defaults.
 # By using a portnumber, the BagClient detects that this is a mock API
-BAG_URL = "http://localhost:5010/lvbag/api/individuelebevragingen/v2"
+BAG_URL = "http://localhost:5010/api/individuelebevragingen/v2"
 BAG_INFO_URL = "http://localhost:5010/health/v2/info"
 BAG_AD_URL = env.str("BAG_AD_URL", default=f"{BAG_URL}/adressen")
 BAG_AO_URL = env.str("BAG_AO_URL", default=f"{BAG_URL}/adresseerbareobjecten")

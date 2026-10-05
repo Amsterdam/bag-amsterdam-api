@@ -148,6 +148,45 @@ class TestBaseProxyView:
             ],
         }
 
+    def test_backend_exception(self, api_client, requests_mock):
+        """Prove that downstream connection errors are handled gracefully."""
+
+        requests_mock.get(
+            "/api/individuelebevragingen/v2/adressen",
+            exc=OSError("Connection refused"),
+        )
+
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["FP/MDW"])
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+
+        response = api_client.get(url, headers=headers)
+        assert response.status_code == 503
+
+    def test_backend_500_exception(self, api_client, requests_mock):
+        """Prove that downstream connection errors are handled gracefully."""
+        error_html = "<html><body><h1>500 Internal Server Error</h1></body></html>"
+
+        requests_mock.get(
+            "/api/individuelebevragingen/v2/adressen",
+            text=error_html,
+            status_code=500,
+            headers={"content-type": "text/html"},
+        )
+
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["FP/MDW"])
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+
+        response = api_client.get(url, headers=headers)
+        assert response.status_code == 502
+
     def test_index_view(self, api_client):
         """Prove that index view works"""
         url = reverse("bag-index")
@@ -204,7 +243,7 @@ class TestBaseProxyView:
 
     def test_valid_query_params(self, api_client, requests_mock):
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adressen/0484200002040489",
+            "/api/individuelebevragingen/v2/adressen/0484200002040489",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
@@ -225,7 +264,7 @@ class TestBaseProxyView:
     def test_invalid_query_parameter_type(self, api_client, requests_mock):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adressen",
+            "/api/individuelebevragingen/v2/adressen",
             json=self.RESPONSE_ADRESSEN,
             headers={"content-type": "application/json"},
         )
@@ -248,7 +287,7 @@ class TestBaseProxyView:
             "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 Bad "
             "Request",
             "detail": "Input should be a valid integer, unable to parse string as an integer",
-            "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adressen",
+            "instance": "http://localhost:5010/api/individuelebevragingen/v2/adressen",
             "code": "paramsValidation",
             "invalid-params": [
                 {
@@ -277,7 +316,7 @@ class TestBaseProxyView:
                     "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
                     "Bad Request",
                     "detail": "Input should be 'V', 'S' or 'L'",
-                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "instance": "http://localhost:5010/api/individuelebevragingen/v2/adresseerbareobjecten",
                     "code": "paramsValidation",
                     "invalid-params": [
                         {
@@ -294,7 +333,7 @@ class TestBaseProxyView:
     def test_enum_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+            "/api/individuelebevragingen/v2/adresseerbareobjecten",
             json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )
@@ -331,7 +370,7 @@ class TestBaseProxyView:
                     "Bad Request",
                     "detail": "Value error, Minimum surface (8000) cannot be larger than maximum "
                     "surface (5000)",
-                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "instance": "http://localhost:5010/api/individuelebevragingen/v2/adresseerbareobjecten",
                     "code": "paramsValidation",
                     "invalid-params": [
                         {
@@ -349,7 +388,7 @@ class TestBaseProxyView:
     def test_value_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+            "/api/individuelebevragingen/v2/adresseerbareobjecten",
             json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )
@@ -385,7 +424,7 @@ class TestBaseProxyView:
                     "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
                     "Bad Request",
                     "detail": "Value error, Invalid Point query parameter",
-                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/ligplaatsen",
+                    "instance": "http://localhost:5010/api/individuelebevragingen/v2/ligplaatsen",
                     "code": "paramsValidation",
                     "invalid-params": [
                         {
@@ -402,7 +441,7 @@ class TestBaseProxyView:
     def test_point_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/ligplaatsen",
+            "/api/individuelebevragingen/v2/ligplaatsen",
             json=self.RESPONSE_LIGPLAATSEN,
             headers={"content-type": "application/json"},
         )
@@ -438,7 +477,7 @@ class TestBaseProxyView:
                     "type": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#/10.4.1 400 "
                     "Bad Request",
                     "detail": "List should have at least 4 items after validation, not 3",
-                    "instance": "http://localhost:5010/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+                    "instance": "http://localhost:5010/api/individuelebevragingen/v2/adresseerbareobjecten",
                     "code": "paramsValidation",
                     "invalid-params": [
                         {
@@ -455,7 +494,7 @@ class TestBaseProxyView:
     def test_bbox_query_parameter(self, api_client, requests_mock, query, status, expected):
         """Prove that pydantic validation errors for query parameters are handled gracefully"""
         requests_mock.get(
-            "/lvbag/api/individuelebevragingen/v2/adresseerbareobjecten",
+            "/api/individuelebevragingen/v2/adresseerbareobjecten",
             json=self.RESPONSE_ADRESOBJECT,
             headers={"content-type": "application/json"},
         )

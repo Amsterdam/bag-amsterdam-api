@@ -4,13 +4,11 @@ from copy import deepcopy
 from urllib.parse import urlsplit
 
 import orjson
-import requests
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.timezone import now
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValError
-from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
@@ -67,16 +65,7 @@ class BaseProxyView(APIView):
         params = self.get_query_parameters(request)
 
         # Proxy to kadaster BAG API
-        try:
-            downstream_response = self.client.call(request, params)
-        except (APIException, OSError) as e:
-            response = (
-                e.__cause__.response.json()
-                if isinstance(e.__cause__, requests.RequestException)
-                and e.__cause__.response is not None
-                else None
-            )
-            raise
+        downstream_response = self.client.call(request, params)
 
         # Rewrite the response to pagination still works.
         # (currently in in-place)
