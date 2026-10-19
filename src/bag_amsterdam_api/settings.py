@@ -244,13 +244,13 @@ DATAPUNT_AUTHZ = {
 # -- Local app settings
 
 if _USE_SECRET_STORE or CLOUD_ENV.startswith("azure"):
-    KADASTER_BAG_API_KEY = Path("/mnt/secrets-store/bag-api-key").read_text()
+    KADASTER_BAG_API_KEY = Path("/mnt/secrets-store/BAG-API-key").read_text()
 else:
     KADASTER_BAG_API_KEY = env.str("KADASTER_BAG_API_KEY", "")
 
 BAG_URL = env.str(
     "BAG_URL",
-    default="",
+    default="https://api.bag.kadaster.nl/lvbag",
 )
 BAG_INFO_URL = f"{BAG_URL}/info"
 BAG_AO_URL = f"{BAG_URL}/adresseerbareobjecten"
