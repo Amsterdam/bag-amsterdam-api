@@ -250,7 +250,7 @@ else:
 
 BAG_URL = env.str(
     "BAG_URL",
-    default="https://api.bag.kadaster.nl/lvbag",
+    default="https://api.bag.kadaster.nl/lvbag/individuelebevragingen/v2",
 )
 BAG_INFO_URL = f"{BAG_URL}/info"
 BAG_AO_URL = f"{BAG_URL}/adresseerbareobjecten"
