@@ -65,12 +65,14 @@ class BaseProxyView(APIView):
         self.client.endpoint_url = self.get_endpoint_url()
         params = self.get_query_parameters(request)
 
-        # Proxy to kadaster BAG API
+        # Convert query parameters back to camelCase for call function
         parameters = (
             {toCamelCase(key): value for key, value in params.items()}
             if params is not None
             else None
         )
+
+        # Proxy to kadaster BAG API
         downstream_response = self.client.call(request, parameters)
 
         # Rewrite the response to pagination still works.
@@ -99,8 +101,8 @@ class BaseProxyView(APIView):
         if not self.query_parameters:
             return None
 
-        parameters = {to_snake_case(key): value for key, value in request.query_params.items()}
         try:
+            parameters = {to_snake_case(key): value for key, value in request.query_params.items()}
             query_parameters = self.query_parameters.model_validate(parameters)
         except PydanticValError as e:
             raise exceptions.ParamsValidationError(self._convert_pydantic_error(e.errors())) from e

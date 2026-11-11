@@ -300,8 +300,8 @@ class TestBaseProxyView:
             ],
         }
 
-    def test_multiple_query_params(self, api_client, requests_mock):
-        """Prove that pydantic validation errors for query parameters are handled gracefully"""
+    def test_camel_case_query_params(self, api_client, requests_mock):
+        """Prove that query parameters in camelCase are handled gracefully"""
         requests_mock.get(
             "/api/individuelebevragingen/v2/adressen",
             json=self.RESPONSE_ADRESSEN,
