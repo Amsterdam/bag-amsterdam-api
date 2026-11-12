@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from copy import deepcopy
 from urllib.parse import urlsplit
@@ -64,8 +65,15 @@ class BaseProxyView(APIView):
         self.client.endpoint_url = self.get_endpoint_url()
         params = self.get_query_parameters(request)
 
+        # Convert query parameters back to camelCase for call function
+        parameters = (
+            {toCamelCase(key): value for key, value in params.items()}
+            if params is not None
+            else None
+        )
+
         # Proxy to kadaster BAG API
-        downstream_response = self.client.call(request, params)
+        downstream_response = self.client.call(request, parameters)
 
         # Rewrite the response to pagination still works.
         # (currently in in-place)
@@ -94,7 +102,8 @@ class BaseProxyView(APIView):
             return None
 
         try:
-            query_parameters = self.query_parameters.model_validate(request.query_params)
+            parameters = {to_snake_case(key): value for key, value in request.query_params.items()}
+            query_parameters = self.query_parameters.model_validate(parameters)
         except PydanticValError as e:
             raise exceptions.ParamsValidationError(self._convert_pydantic_error(e.errors())) from e
 
@@ -168,3 +177,12 @@ class BaseProxyView(APIView):
             "code": "paramsValidation",
             "invalid-params": invalid_params,
         }
+
+
+def to_snake_case(value: str):
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
+
+
+def toCamelCase(value: str):
+    parts = value.split("_")
+    return parts[0] + "".join(word.capitalize() for word in parts[1:])

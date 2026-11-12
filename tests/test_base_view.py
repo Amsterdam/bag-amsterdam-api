@@ -300,6 +300,28 @@ class TestBaseProxyView:
             ],
         }
 
+    def test_camel_case_query_params(self, api_client, requests_mock):
+        """Prove that query parameters in camelCase are handled gracefully"""
+        requests_mock.get(
+            "/api/individuelebevragingen/v2/adressen",
+            json=self.RESPONSE_ADRESSEN,
+            headers={"content-type": "application/json"},
+        )
+
+        url = reverse("bag-adressen")
+        token = build_jwt_token(["FP/MDW"])
+
+        response = api_client.get(
+            url,
+            {"woonplaatsNaam": "Amsterdam", "openbareRuimteNaam": "Javastraat", "huisnummer": 196},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+        )
+
+        assert response.status_code == 200
+
     @pytest.mark.parametrize(
         "query, status, expected",
         [
