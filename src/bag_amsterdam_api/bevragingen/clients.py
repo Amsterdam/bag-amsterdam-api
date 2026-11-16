@@ -74,6 +74,8 @@ class BagClient:
                 headers={
                     "Accept": "application/hal+json; charset=utf-8",
                     "User-Agent": USER_AGENT,
+                    "Accept-Crs": "epsg:28992",
+                    # some endpoints still require an accept_crs header
                 },
             )
         except (TimeoutError, Timeout) as e:
